@@ -1,0 +1,5 @@
+Giulio Fabbian : 
+- ICM & SZ ???
+- cl, fNL ?
+
+-> sum(m_nu) = xxxeV (60m for planck, 50m for SimonObs)
