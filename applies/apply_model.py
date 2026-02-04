@@ -7,7 +7,7 @@ import coloralf as c
 import numpy as np
 from time import time
 
-sys.path.append('./Spec2vecModels/')
+sys.path.append('./models/')
 from get_argv import get_argv, get_device
 from train_models import load_from_pretrained
 sys.path.append('./')
