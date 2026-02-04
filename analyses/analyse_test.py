@@ -10,10 +10,10 @@ from types import SimpleNamespace
 from time import time
 from tqdm import tqdm
 
-sys.path.append('./Spec2vecModels/')
+sys.path.append('./models/')
 from get_argv import get_argv
 
-sys.path.append(f"./SpecSimulator")
+sys.path.append(f"./specSimulator")
 from specsimulator import SpecSimulator
 import hparams
 import utils_spec.psf_func as pf
@@ -413,7 +413,6 @@ def open_fold(args, paths, folds, nb_level=20):
     plt.plot(vp["arg.0.0"], res["fact"], color="g", linestyle="", marker=".", alpha=0.7)
     plt.xlabel("Arg.0.0")
     plt.ylabel(f"Norma. factor")
-    plt.legend()
     plt.savefig(f"{Paths.save}/arg002score.png")
     plt.close()
 
@@ -661,7 +660,6 @@ if __name__ == "__main__":
             plt.scatter(val, yscore, color='k', marker='+', alpha=0.5)
             plt.errorbar(xbin, ybin, yerr=ystd, color="r", linestyle="", marker=".")
             showTrainParams(train_params, var_name=key)
-            plt.legend()
             plt.xlabel(f"Variable {key}")
             plt.ylabel(ylabel)
 
@@ -732,8 +730,6 @@ if __name__ == "__main__":
             pc = 0.05
             args = np.argsort(true_res)
             imin, imax = int(len(args)*pc), int(len(args)*(1-pc))
-            print(f"No correction   : {np.mean(true_res)}")
-            print(f"With correction : {np.mean(true_res[args[imin:imax]])}")
 
             f.write(f"{mode}={np.mean(true_res[args[imin:imax]])}~{np.std(true_res[args[imin:imax]])}\n")
 

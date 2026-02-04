@@ -22,7 +22,7 @@ from spectractor import parameters
 from spectractor.simulation.adr import hadec2zdpar
 
 # IMPORTATION SPECSIMULATOR
-sys.path.append(f"./SpecSimulator")
+sys.path.append(f"./specSimulator")
 from specsimulator import SpecSimulator
 import hparams
 import utils_spec.psf_func as pf
