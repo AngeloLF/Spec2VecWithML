@@ -18,7 +18,7 @@ class SCaM_Model(nn.Module):
     folder_input = "image"
     folder_output = "spectrum"
     
-    def __init__(self, tel=None):
+    def __init__(self):
 
         super(SCaM_Model, self).__init__()
 

@@ -1,7 +1,9 @@
 import os, sys, shutil, importlib
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 import coloralf as c
+from types import SimpleNamespace
 
 import torch
 import torch.nn as nn
@@ -52,7 +54,7 @@ def load_model(model_name, device, path2architecture='./Spec2vecModels/'):
         Custom_model = getattr(module, f"{model_name}_Model")
         Custom_dataloader = getattr(module, f"{model_name}_Dataset")
 
-        model = Custom_model().to(device)       
+        model = Custom_model().to(device)      
 
         return model, Custom_dataloader
 
@@ -77,80 +79,7 @@ def load_optim(args):
 
 
 
-
-if __name__ == "__main__":
-
-
-    ### capture params
-    Args = get_argv(sys.argv[1:], prog="training")
-
-    ### Define some params
-    name = f"{Args.model}_{Args.loss}" # Ex. : SCaM_chi2
-    batch_size = params.batch_size_def if Args.model not in params.batch_size_models.keys() else params.batch_size_models[Args.model]
-    model, Custom_dataloader, device = load_model_from_Args(Args)
-    loss_function = give_Loss_Function(Args.loss, Args.model, f"{params.path}/{Args.train}", device)
-
-    ### Define optimizer
-    optim_name = params.optim_def if Args.model not in params.optim_models.keys() else params.optim_models[Args.model]
-    if   optim_name == "Adam"  : optimizer = optim.Adam(model.parameters(), lr=Args.lr)
-    elif optim_name == "AdamW" : optimizer = optim.AdamW(model.parameters(), lr=Args.lr)
-    else : raise Exception(f"{c.r}The optimizer `optim_name` unknow. Please select Adam or AdamW.")
-
-
-
-
-    ### Definition of paths
-    path = params.path                                             # Ex. : ./results/output_simu
-    train_name = f"{Args.from_prefixe}{Args.train}_{Args.lr_str}"       # Ex. : (pre_)(trainCalib_1e-4_)train16k_1e-04
-    full_out_path = f"{params.out_path}/{params.out_dir}/{name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2
-
-    train_inp_dir = f"{path}/{Args.train}/{model.folder_input}"    # Ex. : ./results/output_simu/train16k/image
-    train_out_dir = f"{path}/{Args.train}/{model.folder_output}"   # Ex. : ./results/output_simu/train16k/spectrum
-    valid_inp_dir = f"{path}/{Args.valid}/{model.folder_input}"    # Ex. : ./results/output_simu/valid2k/image
-    valid_out_dir = f"{path}/{Args.valid}/{model.folder_output}"   # Ex. : ./results/output_simu/valid2k/spectrum
-
-    # Define path of losses
-    output_loss       = f"{full_out_path}/{params.out_loss}"       # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss
-    output_loss_mse   = f"{full_out_path}/{params.out_loss_mse}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss_mse
-    output_loss_chi2  = f"{full_out_path}/{params.out_loss_chi2}"  # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss_chi2
-    output_state      = f"{full_out_path}/{params.out_states}"     # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/states
-    output_divers     = f"{full_out_path}/{params.out_divers}"     # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/divers
-
-    # find tel
-    if "ctio" in Args.train : tel = "ctio"
-    elif "auxtel" in Args.train : tel = "auxtel"
-    else : tel = None
-
-    # Create folder in case ...
-    os.makedirs(f"{params.out_path}/{params.out_dir}", exist_ok=True) # Ex. : ./results/Spec2vecModels_Results
-    os.makedirs(full_out_path, exist_ok=True)                         # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2
-    for f in [output_loss, output_loss_mse, output_loss_chi2, output_state, output_divers] : os.makedirs(f, exist_ok=True)
-
-    # Folder for push epoch
-    output_epoch      = f"{full_out_path}/{params.out_epoch}"      # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch
-    os.makedirs(output_epoch, exist_ok=True)
-    output_epoch_here = f"{output_epoch}/{train_name}"             # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch/train16k_1e-04
-    if train_name in os.listdir(output_epoch) : shutil.rmtree(output_epoch_here)
-    os.mkdir(output_epoch_here)
-
-
-
-
-
-    ### Data set loading
-
-    # Créer le Dataset complet
-    train_dataset = Custom_dataloader(train_inp_dir, train_out_dir)
-    valid_dataset = Custom_dataloader(valid_inp_dir, valid_out_dir)
-        
-
-    # Créer les DataLoaders pour l'entraînement et la validation
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
-
-
-
-
+def default_training(Args, device, train_loader, valid_loader):
 
     ### Define losses
 
@@ -173,27 +102,6 @@ if __name__ == "__main__":
 
     best_val_loss = np.inf
     best_state = None
-
-
-
-
-
-    ### Some print
-    print(f"{c.ly}INFO : Size of the loaded train dataset : {c.d}{c.y}{len(train_dataset)}{c.d}")
-    print(f"{c.ly}INFO : Size of the loaded train dataset : {c.d}{c.y}{len(valid_dataset)}{c.d}")
-    print(f"{c.ly}INFO : Telescope detected               : {c.d}{c.y}{tel}{c.d}")
-    print(f"{c.ly}INFO : Utilisation de l'appareil        : {c.d}{c.y}{device}{c.d}")
-    print(f"{c.ly}INFO : Optimizer                        : {c.d}{c.y}{optim_name}{c.d}")
-    print(f"{c.ly}INFO : Model architecture               : {c.d}{c.y}{name}{c.d}")
-    print(f"{c.ly}INFO : Name                             : {c.d}{c.y}{train_name}{c.d}")
-    print(f"{c.ly}INFO : Train                            : {c.d}{c.y}{Args.train}{c.d}")
-    print(f"{c.ly}INFO : Valid                            : {c.d}{c.y}{Args.valid}{c.d}")
-    print(f"{c.ly}INFO : Epoch                            : {c.d}{c.y}{Args.epochs}{c.d}")
-    print(f"{c.ly}INFO : Lrate                            : {c.d}{c.y}{Args.lr}{c.d}")
-    print(f"{c.ly}INFO : batch size                       : {c.d}{c.y}{batch_size}{c.d}")
-    print(f"{c.ly}INFO : Number of parameters             : {c.d}{c.y}{sum(p.numel() for p in model.parameters() if p.requires_grad) / 10**6:.2f} millions{c.d}")
-
-
 
 
 
@@ -262,27 +170,223 @@ if __name__ == "__main__":
         # Show epoch
         lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
         print(f"Epoch [{epoch+1}/{Args.epochs}], loss train = {c.g}{train_loss:.6f}{c.d}, val loss = {c.r}{valid_loss:.6f}{c.d} | LR={c.y}{lrates[epoch]:.2e}{c.d}")
-        with open(f"{output_epoch_here}/INFO - epoch {epoch+1} - {Args.epochs} - {train_loss:.6f} , {valid_loss:.6f}", "wb") as f : pass
+        with open(f"{Args.output.epoch_here}/INFO - epoch {epoch+1} - {Args.epochs} - {train_loss:.6f} , {valid_loss:.6f}", "wb") as f : pass
 
         # save state at each epoch to be able to reload and continue the optimization
         if valid_loss < best_val_loss:
 
             best_val_loss = valid_loss
-            best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict()}
+            best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss}
 
         # save loss
         valid_list_loss[epoch] = valid_loss
         valid_list_loss_mse[epoch] = valid_loss_mse / len(valid_dataset)
         valid_list_loss_chi2[epoch] = valid_loss_chi2 / len(valid_dataset)
 
+    # dict of statistiques
+    run_stats = {
+        "train" : train_list_loss, "train_mse" : train_list_loss_mse,
+        "valid" : valid_list_loss, "valid_mse" : valid_list_loss_mse,
+        "lrates" : lrates
+    }
+
+    return best_state, run_stats
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+
+
+
+    ### capture params
+    Args = get_argv(sys.argv[1:], prog="training")
+
+
+
+    ### Define some params
+    name = f"{Args.model}_{Args.loss}" # Ex. : SCaM_chi2
+    batch_size = params.batch_size_def if Args.model not in params.batch_size_models.keys() else params.batch_size_models[Args.model]
+    model, Custom_dataloader, device = load_model_from_Args(Args)
+    loss_function = give_Loss_Function(Args.loss, Args.model, f"{params.path}/{Args.train}", device)
+    if "particular_training" in dir(model):
+        print(f"{c.ly}{c.tb}INFO : Find particular training function{c.d}")
+        training_function = model.particular_training
+    else:
+        print(f"{c.ly}INFO : default training function{c.d}")
+        training_function = default_training
+
+
+
+    ### Define optimizer
+    optim_name = params.optim_def if Args.model not in params.optim_models.keys() else params.optim_models[Args.model]
+    if   optim_name == "Adam"  : optimizer = optim.Adam(model.parameters(), lr=Args.lr)
+    elif optim_name == "AdamW" : optimizer = optim.AdamW(model.parameters(), lr=Args.lr)
+    else : raise Exception(f"{c.r}The optimizer `optim_name` unknow. Please select Adam or AdamW.")
+
+
+
+    ### Definition of paths
+    path = params.path                                             # Ex. : ./results/output_simu
+    Args.train_name = f"{Args.from_prefixe}{Args.train}_{Args.lr_str}"  # Ex. : (pre_)(trainCalib_1e-4_)train16k_1e-04
+    Args.full_out_path = f"{params.out_path}/{params.out_dir}/{name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2
+
+    Args.train_inp_dir = f"{path}/{Args.train}/{model.folder_input}"    # Ex. : ./results/output_simu/train16k/image
+    Args.train_out_dir = f"{path}/{Args.train}/{model.folder_output}"   # Ex. : ./results/output_simu/train16k/spectrum
+    Args.valid_inp_dir = f"{path}/{Args.valid}/{model.folder_input}"    # Ex. : ./results/output_simu/valid2k/image
+    Args.valid_out_dir = f"{path}/{Args.valid}/{model.folder_output}"   # Ex. : ./results/output_simu/valid2k/spectrum
+
+    # Define path of losses
+    Args.output = SimpleNamespace()
+    Args.output.loss       = f"{Args.full_out_path}/{params.out_loss}"       # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss
+    Args.output.loss_mse   = f"{Args.full_out_path}/{params.out_loss_mse}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss_mse
+    Args.output.loss_png   = f"{Args.full_out_path}/{params.out_loss_png}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss_png -> save loss on png
+    Args.output.state      = f"{Args.full_out_path}/{params.out_states}"     # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/states
+    Args.output.divers     = f"{Args.full_out_path}/{params.out_divers}"     # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/divers
+    Args.output.divers_png = f"{Args.full_out_path}/{params.out_divers_png}" # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/divers_png -> save divers on png
+
+    # find tel
+    if "ctio" in Args.train : tel = "ctio"
+    elif "auxtel" in Args.train : tel = "auxtel"
+    else : tel = None
+
+    # Create folder in case ...
+    os.makedirs(f"{params.out_path}/{params.out_dir}", exist_ok=True) # Ex. : ./results/Spec2vecModels_Results
+    os.makedirs(Args.full_out_path, exist_ok=True)                         # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2
+    for f in dir(Args.output):
+        if not f.startswith("__") and not f.endswith("__"): 
+            os.makedirs(getattr(Args.output, f), exist_ok=True)
+
+    # Folder for push epoch
+    Args.output.epoch = f"{Args.full_out_path}/{params.out_epoch}"      # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch
+    os.makedirs(Args.output.epoch, exist_ok=True)
+    Args.output.epoch_here = f"{Args.output.epoch}/{Args.train_name}"        # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch/train16k_1e-04
+    if Args.train_name in os.listdir(Args.output.epoch) : shutil.rmtree(Args.output.epoch_here)
+    os.mkdir(Args.output.epoch_here)
+
+
+
+
+
+
+    ### Data set loading
+
+    # Créer le Dataset complet
+    train_dataset = Custom_dataloader(Args.train_inp_dir, Args.train_out_dir)
+    valid_dataset = Custom_dataloader(Args.valid_inp_dir, Args.valid_out_dir)
+        
+
+    # Créer les DataLoaders pour l'entraînement et la validation
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
+
+
+
+
+
+    ### Some print
+    print(f"{c.ly}INFO : Size of the loaded train dataset : {c.d}{c.y}{len(train_dataset)}{c.d}")
+    print(f"{c.ly}INFO : Size of the loaded valid dataset : {c.d}{c.y}{len(valid_dataset)}{c.d}")
+    print(f"{c.ly}INFO : Telescope detected               : {c.d}{c.y}{tel}{c.d}")
+    print(f"{c.ly}INFO : Utilisation de l'appareil        : {c.d}{c.y}{device}{c.d}")
+    print(f"{c.ly}INFO : Optimizer                        : {c.d}{c.y}{optim_name}{c.d}")
+    print(f"{c.ly}INFO : Model architecture               : {c.d}{c.y}{name}{c.d}")
+    print(f"{c.ly}INFO : Name                             : {c.d}{c.y}{Args.train_name}{c.d}")
+    print(f"{c.ly}INFO : Train                            : {c.d}{c.y}{Args.train}{c.d}")
+    print(f"{c.ly}INFO : Valid                            : {c.d}{c.y}{Args.valid}{c.d}")
+    print(f"{c.ly}INFO : Epoch                            : {c.d}{c.y}{Args.epochs}{c.d}")
+    print(f"{c.ly}INFO : Lrate                            : {c.d}{c.y}{Args.lr}{c.d}")
+    print(f"{c.ly}INFO : batch size                       : {c.d}{c.y}{batch_size}{c.d}")
+    print(f"{c.ly}INFO : Number of parameters             : {c.d}{c.y}{sum(p.numel() for p in model.parameters() if p.requires_grad) / 10**6:.2f} millions{c.d}")
+
+
+
+
+
+    
+    ### Training :
+    best_state, run_stats = training_function(Args, device, train_loader, valid_loader)
+
+    
+
+
+
 
     ### save everything
-    print("Saving loss history and states of best models")
+    print("Savings ...")
 
-    np.save(f"{output_loss}/{train_name}.npy", np.array((train_list_loss, valid_list_loss)))
-    np.save(f"{output_loss_mse}/{train_name}.npy", np.array((train_list_loss_mse, valid_list_loss_mse)))
-    np.save(f"{output_loss_chi2}/{train_name}.npy", np.array((train_list_loss_chi2, valid_list_loss_chi2)))
-    np.save(f"{output_divers}/lr_{train_name}.npy", lrates)
 
-    if Args.save : torch.save(best_state, f"{output_state}/{train_name}_best.pth")
+
+    # Saving loss
+    print(f"{c.lm}INFO : Save losses (& plots) ... {c.d}")
+    np.save(f"{Args.output.loss}/{Args.train_name}.npy", np.array((run_stats["train"], run_stats["valid"])))
+    np.save(f"{Args.output.loss_mse}/{Args.train_name}.npy", np.array((run_stats["train_mse"], run_stats["valid_mse"])))
+
+    plt.figure(figsize=(16, 9))
+    plt.plot(np.arange(1, Args.epochs+1), run_stats["train"], c="k", label="Train loss")
+    plt.plot(np.arange(1, Args.epochs+1), run_stats["valid"], c="g", label="Valid loss")
+    plt.axvline(best_state["epoch"], c="g", ls=":", label=f"Best state at valid loss = {best_state['best_val_loss']:.3e}")
+    plt.yscale("log")
+    plt.title(f"Loss for {name} train with {Args.train_name}")
+    plt.legend()
+    plt.xlabel(f"Epochs")
+    plt.ylabel(f"Loss {Args.loss}")
+    plt.savefig(f"{Args.output.loss_png}/{Args.train_name}.png")
+    plt.close()
+
+
+
+    # Saving lr
+    print(f"{c.lm}INFO : Save learnings rates (& plot) ... {c.d}")
+    if "lrates" in run_stats.keys():
+        np.save(f"{Args.output.divers}/lr_{Args.train_name}.npy", run_stats["lrates"])
+        plt.figure(figsize=(16, 9))
+
+        # Les losses
+        plt.plot(np.arange(1, Args.epochs+1), run_stats["train"], c="k", ls=":", label="Train loss")
+        plt.plot(np.arange(1, Args.epochs+1), run_stats["valid"], c="k", label="Valid loss")
+        plt.axvline(best_state["epoch"], c="g", ls="-", label=f"Best state at valid loss = {best_state['best_val_loss']:.3e}")
+        plt.ylabel(f"Loss {Args.loss}", color="black")
+        plt.tick_params(axis="y", labelcolor="black")
+        plt.legend()
+        plt.yscale("log")
+
+        # Lr
+        plt.twinx()
+        plt.plot(np.arange(1, Args.epochs+1), run_stats["lrates"], c="r")
+        plt.ylabel("Learning rates", color="red")
+        plt.tick_params(axis="y", labelcolor="red", color="r")
+        plt.yscale("log")
+
+        # final config
+        plt.xlabel("Epochs")
+        plt.title("Evolution of learning rates")
+        plt.savefig(f"{Args.output.divers_png}/{Args.train_name}_lr.png")
+        plt.close()
+
+
+
+    print(f"{c.lm}INFO : Save best state ... {c.d}")
+    if Args.save:
+        torch.save(best_state, f"{Args.output.state}/{Args.train_name}_best.pth")
+
+
+
+
+
+
+
+
+
+
+
+
+
 

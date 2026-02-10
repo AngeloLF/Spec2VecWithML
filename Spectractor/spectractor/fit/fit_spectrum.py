@@ -73,12 +73,13 @@ class SpectrumFitWorkspace(FitWorkspace):
             else:
                 raise ValueError(f"{spectrum.target.label=} must be a CALSPEC star according to getCalspec package.")
         self.spectrum = spectrum
+
         p = np.array([1, 0, 0.05, 1.2, 400, 5, 1, self.spectrum.header['D2CCD'], self.spectrum.header['PIXSHIFT'], 0])
         fixed = [False] * p.size
         fixed[0] = False  # A1 
         fixed[1] = "A2_T" not in self.spectrum.header  # fit A2 only on sims to evaluate extraction biases
         fixed[5] = False
-        fixed[7] = True # DCCD
+        fixed[7] = False # DCCD
         # fixed[6:8] = [True, True]
         fixed[8] = True # alpha_pix
         fixed[9] = True
@@ -86,7 +87,7 @@ class SpectrumFitWorkspace(FitWorkspace):
         if not fit_angstrom_exponent:
             fixed[3] = True  # angstrom_exponent
         bounds = [(0, 2), (0, 2/parameters.GRATING_ORDER_2OVER1), (0, 10), (0, 4), (100, 700), (0, 20),
-                  (0.2, 20),(p[7] - 20 * parameters.DISTANCE2CCD_ERR, p[7] + 20 * parameters.DISTANCE2CCD_ERR),
+                  (0.1, 20),(p[7] - 20 * parameters.DISTANCE2CCD_ERR, p[7] + 20 * parameters.DISTANCE2CCD_ERR),
                   (-10, 10), (-np.inf, np.inf)]
         params = FitParameters(p, labels=["A1", "A2", "VAOD", "angstrom_exp", "ozone [db]", "PWV [mm]",
                                           "reso [nm]", r"D_CCD [mm]", r"alpha_pix [pix]", "B"],
@@ -121,6 +122,7 @@ class SpectrumFitWorkspace(FitWorkspace):
             self.params.fixed[self.params.get_index("angstrom_exp")] = True
             self.params.values[self.params.get_index("angstrom_exp")] = 0
             self.my_logger.warning("\n\tWavelengths below 500nm detected: angstrom exponent fitting disabled and fixed to 0.")
+
         self.simulation = SpectrumSimulation(self.spectrum, atmosphere=self.atmosphere, fast_sim=True, with_adr=True)
         self.amplitude_truth = None
         self.lambdas_truth = None
@@ -359,7 +361,7 @@ def lnprob_spectrum(p):  # pragma: no cover
     return lp + w.lnlike(p)
 
 
-def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20):
+def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20, with_line_search=True):
     """Interface function to fit spectrum simulation parameters to data.
 
     Parameters
@@ -380,31 +382,31 @@ def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20):
     >>> run_spectrum_minimisation(w, method="newton")
 
     """
+
     my_logger = set_logger(__name__)
     guess = np.asarray(fit_workspace.params.values)
     if method != "newton":
         run_minimisation(fit_workspace, method=method)
     else:
+
         # fit_workspace.simulation.fast_sim = True
+
         fit_workspace.chisq(guess)
+
         if parameters.DISPLAY and (parameters.DEBUG or fit_workspace.live_fit):
             fit_workspace.plot_fit()
 
         # params_table = np.array([guess])
         my_logger.info(f"\n\tStart guess: {guess}\n\twith {fit_workspace.params.labels}")
 
-        # fit_workspace.simulation.fast_sim = True
-        # fit_workspace.simulation.fix_psf_cube = False
-        # run_minimisation_sigma_clipping(fit_workspace, method="newton", epsilon=epsilon, fix=fit_workspace.fixed,
-        #                                 xtol=1e-4, ftol=1 / fit_workspace.data.size, sigma_clip=10, niter_clip=3,
-        #                                 verbose=False)
-
         fit_workspace.simulation.fast_sim = False
         fixed = copy.copy(fit_workspace.params.fixed)
         fit_workspace.params.fixed = [True] * len(fit_workspace.params)
         fit_workspace.params.fixed[fit_workspace.params.get_index(r"A1")] = False
+
         run_minimisation(fit_workspace, method="newton", xtol=1e-3, ftol=100 / fit_workspace.data.size,
                          verbose=False, with_line_search=False)
+
         fit_workspace.params.fixed = fixed
         run_minimisation_sigma_clipping(fit_workspace, method="newton", xtol=1e-6,
                                         ftol=1e-3 / fit_workspace.data.size, sigma_clip=sigma_clip, niter_clip=3, verbose=False)
@@ -417,10 +419,10 @@ def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20):
             fit_workspace.params.fixed[7] = fixed[7]  # dccd
             fit_workspace.params.fixed[8] = fixed[8]  # pixshift
             run_minimisation_sigma_clipping(fit_workspace, method="newton", xtol=1e-6,
-                                        ftol=1e-3 / fit_workspace.data.size, sigma_clip=sigma_clip, niter_clip=3, verbose=False, with_line_search=True)
+                                        ftol=1e-3 / fit_workspace.data.size, sigma_clip=sigma_clip, niter_clip=3, verbose=False, with_line_search=with_line_search)
             fit_workspace.params.fixed = fixed
             run_minimisation_sigma_clipping(fit_workspace, method="newton", xtol=1e-6,
-                                        ftol=1e-3 / fit_workspace.data.size, sigma_clip=sigma_clip, niter_clip=3, verbose=False, with_line_search=True)
+                                        ftol=1e-3 / fit_workspace.data.size, sigma_clip=sigma_clip, niter_clip=3, verbose=False, with_line_search=with_line_search)
             
          
 

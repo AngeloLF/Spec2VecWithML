@@ -16,6 +16,8 @@ out_loss_chi2 = "loss_chi2"
 out_states = "states"
 out_epoch = "epoch"
 out_divers = "divers"
+out_divers_png = "divers_png"
+out_loss_png = "loss_png"
 
 seed = 42
 num_workers = 4

@@ -234,7 +234,7 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
         ax1.errorbar(xt, yp, yerr=yp_err, c='r', label=f"Spectractor {np.sum(np.abs(res_p))/len(res_p):.3f}", alpha=0.5)
         ax1.errorbar(xt, ys, yerr=yp_err, c='b', label=f"{Args.model_loss } {np.sum(np.abs(res_s))/len(res_s):.3f}", alpha=0.5)
         ax1.set_ylabel(f"{Paths.test}/*/{Args.folder_output}_{num_str}.npy")
-        ax1.set_title(f"$\chi^2$ : {resultChi2['score']:.3f} -- norma : {resultChi2['score_norma']:.3f} -- Comp.Spec : {chi2_spectractor:.3f}")
+        ax1.set_title(f"$\\chi^2$ : {resultChi2['score']:.3f} -- norma : {resultChi2['score_norma']:.3f} -- Comp.Spec : {chi2_spectractor:.3f}")
         ax1.legend()
 
         # Residus spectractor
