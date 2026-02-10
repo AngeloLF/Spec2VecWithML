@@ -308,16 +308,15 @@ if __name__ in "__main__":
 
 
     batch_codes = {
-        "flash"                : ["None",                                 ["jobname", "code"]],
-        "simu"                 : ["SpecSimulator/main_simu.py",           ["nsimu", "tel", "type", "seed"]],
-        "training"             : ["Spec2vecModels/train_models.py",       ["model", "loss", "train", "lr", "tel", "e"]],
-        "apply"                : ["Spec2vecAnalyse/apply_model.py",       ["model", "loss", "train", "lr", "tel", "test"]],
-        "apply_spectractor"    : ["Spec2vecAnalyse/apply_spectractor.py", ["test", "tel"]],
-        "analyse"              : ["Spec2vecAnalyse/analyse_test.py",      ["model", "loss", "train", "lr", "tel", "test", "score"]],
-        "extract_atmo"         : ["ExtractAtmos/extractAtmo.py",       ["model", "loss", "train", "lr", "tel", "test"]],
-        "analyse_atmo"         : ["ExtractAtmos/extractAtmo.py",       ["test", "tel"]],
-        "analyseFOPA"          : ["Spec2vecAnalyse/analyse_FOPA.py",      ["model", "loss", "train", "lr", "tel", "test", "score"]],
-        "findjob"              : ["None",                                 ["modelwl"]] # Model with loss like `SCaM_chi2`
+        "flash"                : ["None",                         ["jobname", "code"]],
+        "simu"                 : ["specSimulator/main_simu.py",   ["nsimu", "tel", "type", "seed"]],
+        "training"             : ["models/train_models.py",       ["model", "loss", "train", "lr", "tel", "e"]],
+        "apply"                : ["applies/apply_model.py",       ["model", "loss", "train", "lr", "tel", "test"]],
+        "apply_spectractor"    : ["applies/apply_spectractor.py", ["test", "tel"]],
+        "analyse"              : ["analyses/analyse_test.py",     ["model", "loss", "train", "lr", "tel", "test", "score"]],
+        "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test"]],
+        "analyseFOPA"          : ["analyses/analyse_FOPA.py",     ["model", "loss", "train", "lr", "tel", "test", "score"]],
+        "findjob"              : ["None",                         ["modelwl"]] # Model with loss like `SCaM_chi2`
     }
 
     arg2split = ["type", "model", "modelwl", "loss", "train", "test", "lr", "load", "nsimu", "score", "tel", "seed"]

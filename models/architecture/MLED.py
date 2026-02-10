@@ -84,7 +84,8 @@ class MLED_Decoder(nn.Module):
 
 
 
-### Partie pour remplacer le decoder par une sortie spectrale !
+### Partie pour remplacer le decoder par une sortie spectrale (a ajouter avec un encoder deja entrainer)
+# Pour l'entrainement, on peut freeze la partie encoder si besoin pour les ~20 premières epochs)
 class MLED_Regspectrum(nn.Module):
     def __init__(self, latent_dim=512, spectrum_length=800):
         super().__init__()
