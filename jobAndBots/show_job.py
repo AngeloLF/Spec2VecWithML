@@ -72,6 +72,11 @@ def inspect_training(params):
 	train_name = f"{params['train']}_{LR}"
 	epoch = int(params['epoch'])
 
+	if "Spec2vecModels_Results" not in os.listdir("./results"):
+
+		rl = f"Training {model_name} with {load_name}{train_name} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
+		ra = -1
+
 	if model_name in os.listdir(f"./results/Spec2vecModels_Results") and "epoch" in os.listdir(f"./results/Spec2vecModels_Results/{model_name}") and f"{load_name}{train_name}" in os.listdir(f"./results/Spec2vecModels_Results/{model_name}/epoch/"):
 
 		nb_make = len(os.listdir(f"./results/Spec2vecModels_Results/{model_name}/epoch/{load_name}{train_name}"))
