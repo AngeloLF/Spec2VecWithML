@@ -213,7 +213,7 @@ def inspect_apply_spectractor(params, debug):
 
 			printdebug(f"Search spectrum_{i:0>{nb_len}} ...", debug)
 
-			if f"spectrum_{i:0>{nb_len}}" in os.listdir(f"./results/output_simu/{test}/{pred_folder}"):
+			if f"spectrum_{i:0>{nb_len}}.npy" in os.listdir(f"./results/output_simu/{test}/{pred_folder}"):
 				nb_make += 1
 				printdebug(f"Find", debug)
 			else:
