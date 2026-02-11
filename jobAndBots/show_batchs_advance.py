@@ -109,7 +109,7 @@ def inspect_simu(params, debug):
 
 		if len(param) > 0:
 
-			printdebug(f"Detecting {param}")
+			printdebug(f"Detecting {param}", debug)
 
 			if param[:5] == "nsimu=" : nsimu = int(param[5:])
 			if param[:3] == "set" : s = param
