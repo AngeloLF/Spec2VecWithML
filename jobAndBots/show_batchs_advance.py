@@ -36,7 +36,7 @@ def extraction(sh, debug):
 
 			if "python" in line:
 
-				if debug : print(f"{c.ti}Get python ...{c.d}{c.lk}(for line `{c.bg}{line}{c.d}{c.lk}`{c.d}")
+				if debug : print(f"{c.ti}Get python ...{c.d}{c.lk}(for line `{c.lg}{line}{c.lk}`{c.d}")
 				params = extraction_code(line)
 
 				if "train_models" in line: 
