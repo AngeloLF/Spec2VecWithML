@@ -36,7 +36,8 @@ def extraction(sh, debug):
 
 	with open(sh, "r") as f:
 
-		printdebug(f"\nSh : {sh}", debug)
+		printdebug()
+		printdebug(f"Sh : {sh}", debug)
 
 		lines = f.read().split("\n")
 
@@ -58,7 +59,7 @@ def extraction(sh, debug):
 					printdebug(f"enter in apply_model ...", debug)
 					return inspect_apply(params)
 				elif "apply_spectractor" in line:
-					printdebug(f"enter in apply_model ...", debug)
+					printdebug(f"enter in apply_spectractor ...", debug)
 					return inspect_apply_spectractor(params, debug)
 				else:
 					printdebug(f"Unknow python ...", debug)
@@ -196,8 +197,8 @@ def inspect_apply_spectractor(params, debug):
 	pred_folder = "pred_Spectractor_x_x_0e+00"
 
 	test = params["LINE"].split(" ")[2]
-	a, z = params["range"].split("_")
-	a, z = int(a), int(z)
+	a, d = params["range"].split("_")
+	a, z = int(a), int(a)+int(d)
 	nb_make = 0
 	to_make = z - a
 
