@@ -200,7 +200,7 @@ def inspect_apply_spectractor(params, debug):
 	a, z = int(a), int(z)
 
 	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
-	nb_len = len(str(to_make))
+	nb_len = len(str(nb_tot))
 	nb_make = 0
 	to_make = z - a
 
