@@ -4,6 +4,14 @@ import numpy as np
 
 
 
+
+def printdebug(msg, debug, color=c.by):
+
+	print(f"{color}DEBUG : {msg}{c.d}")
+
+
+
+
 def extraction_code(code):
 
 	args = code.split(" ")
@@ -23,7 +31,6 @@ def extraction_code(code):
 
 
 
-
 def extraction(sh, debug):
 
 	with open(sh, "r") as f:
@@ -36,18 +43,22 @@ def extraction(sh, debug):
 
 			if "python" in line:
 
-				if debug : print(f"{c.ti}Get python ...{c.d}")
+				printdebug(f"Get python ... (for {line})", debug)
 				params = extraction_code(line)
+				params["LINE"] = line
 
-				if "train_models" in line: 
-					if debug : print(f"{c.ti}train_models ...{c.d}")
-					return inspect_training(params)
-				elif "main_simu" in line: 
-					if debug : print(f"{c.ti}main_simu ...{c.d}")
+				if "main_simu" in line: 
+					printdebug(f"enter in main_simu ...", debug)
 					return inspect_simu(params)
+				elif "train_models" in line: 
+					printdebug(f"enter in train_models ...", debug)
+					return inspect_training(params)
 				elif "apply_model" in line:
-					if debug : print(f"{c.ti}apply_model ...{c.d}")
+					printdebug(f"enter in apply_model ...", debug)
 					return inspect_apply(params)
+				elif "apply_spectractor" in line:
+					printdebug(f"enter in apply_model ...", debug)
+					return inspect_apply_spectractor(params, debug)
 				else:
 					if debug : print(f"{c.ti}Unknow ...{c.d}")
 
@@ -175,6 +186,54 @@ def inspect_apply(params):
 		ra = -1
 
 	return rl, ra, "2-apply"
+
+
+
+
+def inspect_apply_spectractor(params, debug):
+
+	pred_folder = "pred_Spectractor_x_x_0e+00"
+
+	test = params.LINE.split(" ")[2]
+	a, z = params["range"].split("_")
+
+	to_make = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
+	nb_len = len(str(to_make))
+	nb_make = 0
+
+	if pred_folder in os.listdir(f"./results/output_simu/{test}"):
+
+		for i in range(a, z):
+
+			if f"spectrum_{i:0>{nb_len}}" in os.listdir(f"./results/output_simu/{test}/{pred_folder}"):
+				nb_make += 1
+
+		color = get_color(nb_make, to_make)
+		lmax = len(str(to_make))
+
+		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:6.2f} %]"
+
+		rl = f"Apply spectractor > {test} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
+		ra = nb_make/to_make*100
+
+	else:
+
+		rl = f"Apply spectractor > {test} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
+		ra = -1
+
+	return rl, ra, "2-apply_spectractor"
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def get_color(nb_make, nb_total):
