@@ -198,11 +198,14 @@ def inspect_apply_spectractor(params, debug):
 	test = params["LINE"].split(" ")[2]
 	a, z = params["range"].split("_")
 	a, z = int(a), int(z)
+	nb_make = 0
+	to_make = z - a
+
+	printdebug(f"spectractor on test {test}", debug)
+	printdebug(f"Range : {a} to {z} (to_make={to_make})", debug)
 
 	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
 	nb_len = len(str(nb_tot))
-	nb_make = 0
-	to_make = z - a
 
 	if pred_folder in os.listdir(f"./results/output_simu/{test}"):
 
