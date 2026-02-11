@@ -103,15 +103,13 @@ def inspect_training(params, debug):
 def inspect_simu(params, debug):
 
 	path = f"./results/output_simu/{params['f']}"
+	nsimu = int(params["nsimu"])
 	
 
 	for param in params:
 
 		if len(param) > 0:
 
-			printdebug(f"Detecting {param}", debug)
-
-			if param[:5] == "nsimu=" : nsimu = int(param[5:])
 			if param[:3] == "set" : s = param
 
 
