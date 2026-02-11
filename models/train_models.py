@@ -172,6 +172,10 @@ def default_training(Args, device, train_loader, valid_loader):
                 valid_loss_chi2 += chi2_loss(outputs, spectra) * images.size(0)
 
         valid_loss = valid_loss / len(valid_dataset)
+        # Predict of first train
+        model.eval()
+        pred_valid0 = model(Args.valid0_img).cpu().detach().numpy()[0]
+        np.save(f"{Args.output.evolution_here}/valid_{epoch}.npy", pred_valid0)
 
         # Show epoch
         lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
@@ -188,6 +192,8 @@ def default_training(Args, device, train_loader, valid_loader):
         valid_list_loss[epoch] = valid_loss
         valid_list_loss_mse[epoch] = valid_loss_mse / len(valid_dataset)
         valid_list_loss_chi2[epoch] = valid_loss_chi2 / len(valid_dataset)
+
+
 
     # dict of statistiques
     run_stats = {
