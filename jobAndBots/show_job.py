@@ -36,7 +36,7 @@ def extraction(sh, debug):
 
 	with open(sh, "r") as f:
 
-		printdebug(f"Sh : {sh}", debug)
+		printdebug(f"\nSh : {sh}", debug)
 
 		lines = f.read().split("\n")
 
