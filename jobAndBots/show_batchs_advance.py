@@ -170,4 +170,16 @@ if __name__ == "__main__":
 
 	shs = [file for file in os.listdir() if file[-3:] == ".sh"] + [file for file in os.listdir() if file[-6:] == ".slurm"]
 
-	for sh in shs : extraction(sh, debug)
+	for sh in shs:
+		print(f"Make", sh)
+		extraction(sh, debug)
+
+
+
+
+
+
+
+
+
+
