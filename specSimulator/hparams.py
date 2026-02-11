@@ -349,8 +349,8 @@ class Hparams():
 
     def __init__(self, telescope=None, target_set=None, psf=None, var_params=dict(), nsimu=None, with_noise=True, seed=None,
                  lambdas=[300, 1100], lambdas_step=1, atmo_model="getobsatmo", flam2adurate=1_067_400_516_204.6393,
-                 disperser_dir="./SpecSimulator/datafile/dispersers",
-                 throughput_dir="./SpecSimulator/datafile/throughput",
+                 disperser_dir="./specSimulator/datafile/dispersers",
+                 throughput_dir="./specSimulator/datafile/throughput",
                  output_path=".", output_dir = "results", output_simu_dir="output_simu", output_simu_fold="simulation"):
 
         """
