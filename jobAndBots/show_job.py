@@ -5,10 +5,10 @@ import numpy as np
 
 
 
-def printdebug(msg, debug, color=c.bm):
+def printdebug(msg, debug, color=c.bm, space=0):
 
 	if debug:
-		print(f"{color}DEBUG : {msg}{c.d}")
+		print("\n"*space + f"{color}DEBUG : {msg}{c.d}")
 
 
 
@@ -36,8 +36,7 @@ def extraction(sh, debug):
 
 	with open(sh, "r") as f:
 
-		printdebug("", debug)
-		printdebug(f"Sh : {sh}", debug)
+		printdebug(f"Sh : {sh}", debug, space=1)
 
 		lines = f.read().split("\n")
 
@@ -212,8 +211,13 @@ def inspect_apply_spectractor(params, debug):
 
 		for i in range(a, z):
 
+			printdebug(f"Search spectrum_{i:0>{nb_len}} ...", debug)
+
 			if f"spectrum_{i:0>{nb_len}}" in os.listdir(f"./results/output_simu/{test}/{pred_folder}"):
 				nb_make += 1
+				printdebug(f"Find", debug)
+			else:
+				printdebug(f"Not find ...", debug)
 
 		color = get_color(nb_make, to_make)
 		lmax = len(str(to_make))
