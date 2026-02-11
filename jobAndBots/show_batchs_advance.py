@@ -4,6 +4,18 @@ import coloralf as c
 
 
 
+
+
+
+
+def printdebug(msg, debug, color=c.y):
+
+	if debug:
+		print(f"{color}DEBUG : {msg}{c.d}")
+
+
+
+
 def extraction_code(code):
 
 	args = code.split(" ")
@@ -28,7 +40,7 @@ def extraction(sh, debug):
 
 	with open(sh, "r") as f:
 
-		if debug : print(f"\nSh : {c.ti}{sh}{c.d}")
+		printdebug(f"\nSh : {c.ti}{sh}{c.d}", debug)
 
 		lines = f.read().split("\n")
 
@@ -36,25 +48,26 @@ def extraction(sh, debug):
 
 			if "python" in line:
 
-				if debug : print(f"{c.ti}Get python ...{c.d}{c.lk}(for line `{c.lg}{line}{c.lk}`){c.d}")
+				printdebug(f"Get python ... (for line `{line}`)", debug)
 				params = extraction_code(line)
 
-				if "train_models" in line: 
-					if debug : print(f"{c.ti}train_models ...{c.d}")
-					inspect_training(params)
-				elif "main_simu" in line: 
-					if debug : print(f"{c.ti}main_simu ...{c.d}")
-					inspect_simu(params)
+				
+				if "main_simu" in line: 
+					printdebug(f"Detect main_simu ...", debug)
+					inspect_simu(params, debug)
+				elif "train_models" in line: 
+					printdebug(f"Detect train_models ...", debug)
+					inspect_training(params, debug)
 				elif "apply_model" in line:
-					if debug : print(f"{c.ti}apply_model ...{c.d}")
-					inspect_apply(params)
+					printdebug(f"Detect apply_model ...", debug)
+					inspect_apply(params, debug)
 				else:
-					if debug : print(f"{c.ti}Unknow ...{c.d}")
+					printdebug(f"Detect nothing ...", debug)
 
 
 
 
-def inspect_training(params):
+def inspect_training(params, debug):
 
 	LR = f"{float(params['lr']):.0e}"
 
@@ -87,7 +100,7 @@ def inspect_training(params):
 
 
 
-def inspect_simu(params):
+def inspect_simu(params, debug):
 
 	path = f"./results/output_simu/{params['f']}"
 	
@@ -96,17 +109,19 @@ def inspect_simu(params):
 
 		if len(param) > 0:
 
-			if param[:5] == "nsimu=" : x = int(param[5:])
+			printdebug(f"Detecting {param}")
+
+			if param[:5] == "nsimu=" : nsimu = int(param[5:])
 			if param[:3] == "set" : s = param
 
 
 	if params['f'] in os.listdir(f"./results/output_simu/"):
 
 		nb_make = len(os.listdir(f"{path}/image"))
-		color = get_color(nb_make, x)
-		lmax = len(str(x))
+		color = get_color(nb_make, nsimu)
+		lmax = len(str(nsimu))
 
-		print(f"Simulator {params['f']} > {s} : {color}{nb_make:{lmax}}/{x}{c.d} [{nb_make/x*100:6.2f} %]")
+		print(f"Simulator {params['f']} > {s} : {color}{nb_make:{lmax}}/{nsimu}{c.d} [{nb_make/nsimu*100:6.2f} %]")
 
 	else:
 
@@ -114,7 +129,7 @@ def inspect_simu(params):
 
 
 
-def inspect_apply(params):
+def inspect_apply(params, debug):
 
 	model, loss, train, lr = params['model'], params['loss'], params['train'], f"{float(params['lr']):.0e}"
 
