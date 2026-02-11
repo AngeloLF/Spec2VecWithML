@@ -28,7 +28,7 @@ def extraction(sh, debug):
 
 	with open(sh, "r") as f:
 
-		if debug : print(f"Sh : {c.ti}{sh}{c.d}")
+		if debug : print(f"\nSh : {c.ti}{sh}{c.d}")
 
 		lines = f.read().split("\n")
 
@@ -36,7 +36,7 @@ def extraction(sh, debug):
 
 			if "python" in line:
 
-				if debug : print(f"{c.ti}Get python ...{c.d}")
+				if debug : print(f"{c.ti}Get python ...{c.d}{c.lk}(for line `{c.bg}{line}{c.d}{c.lk}`{c.d}")
 				params = extraction_code(line)
 
 				if "train_models" in line: 
@@ -171,7 +171,6 @@ if __name__ == "__main__":
 	shs = [file for file in os.listdir() if file[-3:] == ".sh"] + [file for file in os.listdir() if file[-6:] == ".slurm"]
 
 	for sh in shs:
-		print(f"Make", sh)
 		extraction(sh, debug)
 
 
