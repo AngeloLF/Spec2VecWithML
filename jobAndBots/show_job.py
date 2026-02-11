@@ -224,12 +224,12 @@ def inspect_apply_spectractor(params, debug):
 
 		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:.2f} %]"
 
-		rl = f"Apply spectractor > {test} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
+		rl = f"Apply spectractor > {test} RANGE {a} to {z} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
 		ra = nb_make/to_make*100
 
 	else:
 
-		rl = f"Apply spectractor > {test} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
+		rl = f"Apply spectractor > {test} RANGE {a} to {z} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
 		ra = -1
 
 	return rl, ra, "2-apply_spectractor"
