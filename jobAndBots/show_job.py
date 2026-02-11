@@ -197,6 +197,7 @@ def inspect_apply_spectractor(params, debug):
 
 	test = params["LINE"].split(" ")[2]
 	a, z = params["range"].split("_")
+	a, z = int(a), int(z)
 
 	to_make = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
 	nb_len = len(str(to_make))
