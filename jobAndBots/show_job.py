@@ -5,9 +5,10 @@ import numpy as np
 
 
 
-def printdebug(msg, debug, color=c.by):
+def printdebug(msg, debug, color=c.bm):
 
-	print(f"{color}DEBUG : {msg}{c.d}")
+	if debug:
+		print(f"{color}DEBUG : {msg}{c.d}")
 
 
 
@@ -35,7 +36,7 @@ def extraction(sh, debug):
 
 	with open(sh, "r") as f:
 
-		if debug : print(f"Sh : {c.ti}{sh}{c.d}")
+		printdebug(f"Sh : {sh}")
 
 		lines = f.read().split("\n")
 
@@ -60,7 +61,7 @@ def extraction(sh, debug):
 					printdebug(f"enter in apply_model ...", debug)
 					return inspect_apply_spectractor(params, debug)
 				else:
-					if debug : print(f"{c.ti}Unknow ...{c.d}")
+					printdebug(f"Unknow python ...", debug)
 
 
 
@@ -194,7 +195,7 @@ def inspect_apply_spectractor(params, debug):
 
 	pred_folder = "pred_Spectractor_x_x_0e+00"
 
-	test = params.LINE.split(" ")[2]
+	test = params["LINE"].split(" ")[2]
 	a, z = params["range"].split("_")
 
 	to_make = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
