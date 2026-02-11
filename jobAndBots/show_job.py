@@ -96,7 +96,7 @@ def inspect_training(params):
 
 		color = get_color(nb_make, epoch)
 
-		labelPC = "" if nb_make == epoch else f" [{nb_make/epoch*100:6.2f} %]"
+		labelPC = "" if nb_make == epoch else f" [{nb_make/epoch*100:.2f} %]"
 
 		rl = f"Training {model_name} with {load_name}{train_name} : {color}{nb_make:{lmax}}/{epoch}{c.d}{labelPC}"
 		ra = nb_make/epoch*100
@@ -135,7 +135,7 @@ def inspect_simu(params):
 		color = get_color(nb_make, x)
 		lmax = len(str(x))
 
-		labelPC = "" if nb_make == x else f" [{nb_make/x*100:6.2f} %]"
+		labelPC = "" if nb_make == x else f" [{nb_make/x*100:.2f} %]"
 
 		rl = f"Simulator {params['f']} > {s} : {color}{nb_make:{lmax}}/{x}{c.d}{labelPC}"
 		ra = nb_make/x*100
@@ -176,7 +176,7 @@ def inspect_apply(params):
 		color = get_color(nb_make, to_make)
 		lmax = len(str(to_make))
 
-		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:6.2f} %]"
+		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:.2f} %]"
 
 		rl = f"Apply {model}_{loss} > {load_name}{train}_{lr} on {params['test']} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
 		ra = nb_make/to_make*100
@@ -199,9 +199,10 @@ def inspect_apply_spectractor(params, debug):
 	a, z = params["range"].split("_")
 	a, z = int(a), int(z)
 
-	to_make = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
+	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
 	nb_len = len(str(to_make))
 	nb_make = 0
+	to_make = z - a
 
 	if pred_folder in os.listdir(f"./results/output_simu/{test}"):
 
@@ -213,7 +214,7 @@ def inspect_apply_spectractor(params, debug):
 		color = get_color(nb_make, to_make)
 		lmax = len(str(to_make))
 
-		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:6.2f} %]"
+		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:.2f} %]"
 
 		rl = f"Apply spectractor > {test} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
 		ra = nb_make/to_make*100
