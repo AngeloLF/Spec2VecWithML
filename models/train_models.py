@@ -135,11 +135,17 @@ def default_training(Args, device, train_loader, valid_loader):
             train_loss_mse += mse_loss(outputs, spectra) * images.size(0)
             train_loss_chi2 += chi2_loss(outputs, spectra) * images.size(0)
 
-        train_loss = train_loss / len(train_dataset)
-        train_list_loss[epoch] = train_loss
-        train_list_loss_mse[epoch] = train_loss_mse / len(train_dataset)
-        train_list_loss_chi2[epoch] = train_loss_chi2 / len(train_dataset)
 
+
+        train_loss = train_loss / len(train_loader)
+        train_list_loss[epoch] = train_loss
+        train_list_loss_mse[epoch] = train_loss_mse / len(train_loader)
+        train_list_loss_chi2[epoch] = train_loss_chi2 / len(train_loader)
+
+        # Predict of first train
+        model.eval()
+        pred_train0 = model(Args.train0_img).cpu().detach().numpy()[0]
+        np.save(f"{Args.output.evolution_here}/train_{epoch}.npy", pred_train0)
 
 
         ### Validation
@@ -267,9 +273,17 @@ if __name__ == "__main__":
     # Folder for push epoch
     Args.output.epoch = f"{Args.full_out_path}/{params.out_epoch}"      # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch
     os.makedirs(Args.output.epoch, exist_ok=True)
-    Args.output.epoch_here = f"{Args.output.epoch}/{Args.train_name}"        # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch/train16k_1e-04
+    Args.output.epoch_here = f"{Args.output.epoch}/{Args.train_name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch/train16k_1e-04
     if Args.train_name in os.listdir(Args.output.epoch) : shutil.rmtree(Args.output.epoch_here)
     os.mkdir(Args.output.epoch_here)
+
+    # Folder for traning evolution
+    Args.output.evolution = f"{Args.full_out_path}/{params.out_evolution}"      # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/training_evolution
+    os.makedirs(Args.output.evolution, exist_ok=True)
+    Args.output.evolution_here = f"{Args.output.evolution}/{Args.train_name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/training_evolution/train16k_1e-04
+    if Args.train_name in os.listdir(Args.output.evolution) : shutil.rmtree(Args.output.evolution_here)
+    os.mkdir(Args.output.evolution_here)
+
 
 
 
@@ -281,17 +295,18 @@ if __name__ == "__main__":
     # Créer le Dataset complet
     train_dataset = Custom_dataloader(Args.train_inp_dir, Args.train_out_dir)
     valid_dataset = Custom_dataloader(Args.valid_inp_dir, Args.valid_out_dir)
-        
 
     # Créer les DataLoaders pour l'entraînement et la validation
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
 
+    # Keep first img / spectrum file for train & valid
+    Args.train0_img = train_dataset[0][0].unsqueeze(0).to(device)
+    Args.train0_spec = np.load(train_dataset.spectrum_files[0])
+    Args.valid0_img = valid_dataset[0][0].unsqueeze(0).to(device)
+    Args.valid0_spec = np.load(valid_dataset.spectrum_files[0])
 
-
-
-
-    ### Some print
+    # Some print
     print(f"{c.ly}INFO : Size of the loaded train dataset : {c.d}{c.y}{len(train_dataset)}{c.d}")
     print(f"{c.ly}INFO : Size of the loaded valid dataset : {c.d}{c.y}{len(valid_dataset)}{c.d}")
     print(f"{c.ly}INFO : Telescope detected               : {c.d}{c.y}{tel}{c.d}")
@@ -310,7 +325,7 @@ if __name__ == "__main__":
 
 
 
-    
+
     ### Training :
     best_state, run_stats = training_function(Args, device, train_loader, valid_loader)
 
@@ -321,7 +336,6 @@ if __name__ == "__main__":
 
     ### save everything
     print("Savings ...")
-
 
 
     # Saving loss
@@ -340,7 +354,6 @@ if __name__ == "__main__":
     plt.ylabel(f"Loss {Args.loss}")
     plt.savefig(f"{Args.output.loss_png}/{Args.train_name}.png")
     plt.close()
-
 
 
     # Saving lr
@@ -370,7 +383,6 @@ if __name__ == "__main__":
         plt.title("Evolution of learning rates")
         plt.savefig(f"{Args.output.divers_png}/{Args.train_name}_lr.png")
         plt.close()
-
 
 
     print(f"{c.lm}INFO : Save best state ... {c.d}")

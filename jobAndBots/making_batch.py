@@ -468,7 +468,7 @@ if __name__ in "__main__":
 
         for model in args.model:
             # Check model
-            if f"{model}.py" not in os.listdir(f"./Spec2vecModels/architecture") and model not in model_pass:
+            if f"{model}.py" not in os.listdir(f"./models/architecture") and model not in model_pass:
                 raise Exception(f"The architecture model {model} unknow")
 
 

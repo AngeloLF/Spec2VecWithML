@@ -18,6 +18,7 @@ out_epoch = "epoch"
 out_divers = "divers"
 out_divers_png = "divers_png"
 out_loss_png = "loss_png"
+out_evolution = "training_evolution"
 
 seed = 42
 num_workers = 4
