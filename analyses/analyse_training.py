@@ -66,7 +66,7 @@ if __name__ == "__main__":
     ani = animation.FuncAnimation(fig, update, frames=nb_frame, blit=False, repeat=True)
 
     plt.title(f"Evolution of {Args.model}_{Args.loss} training with {Args.fulltrain_str}_{Args.lr_str}")
-    ani.save(f"./results/models_output/{Args.model}_{Args.loss}/divers_png/{Args.fulltrain_str}_{Args.lr_str}.mp4", fps=fps, dpi=300)
+    ani.save(f"./results/models_output/{Args.model}_{Args.loss}/divers_png/{Args.fulltrain_str}_{Args.lr_str}.gif", fps=fps, dpi=300)
     plt.close()
     pbar.close()
 
