@@ -276,8 +276,8 @@ if __name__ == "__main__":
     os.makedirs(f"{path_resume}/html", exist_ok=True)
 
     models, tests = recup_mt(score_type)
-    print(models)
-    print(tests)
+    print(f"{c.y}INFO : finding models : ", ", ".join(models), c.d)
+    print(f"{c.y}INFO : finding tests folders : ", ", ".join(tests), c.d)
 
     make_score(score_type, models, tests)
 

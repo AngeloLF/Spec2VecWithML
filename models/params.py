@@ -4,12 +4,12 @@ import torch.optim as optim
 def __getattr__(name):
 
     if name in locals() : return locals()[name]
-    else : raise ValueError(f"params (of Spec2vecModels) dont have {name=}.")
+    else : raise ValueError(f"params (of models) dont have {name=}.")
 
 path = "./results/output_simu"
 
 out_path = "./results"
-out_dir = "Spec2vecModels_Results"
+out_dir = "models_output"
 out_loss = "loss"
 out_loss_mse = "loss_mse"
 out_loss_chi2 = "loss_chi2"

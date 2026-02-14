@@ -76,21 +76,21 @@ def get_argv(argv, prog=None, correction=False, show=False):
         Errors = list()
 
 
-        if "model" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo"]:
+        if "model" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
 
             print(f"{c.r}WARNING : model architecture is not define (model=<model_architecture>){c.d}")
             Errors.append("Model architecture")
 
 
 
-        if "loss" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo"]:
+        if "loss" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
 
             print(f"{c.r}WARNING : loss function is not define (loss=<loss_function>){c.d}")
             Errors.append("Loss function")
 
 
 
-        if "train" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo"]:
+        if "train" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
 
             print(f"{c.r}WARNING : train folder is not define (train=<train_folder>){c.d}")
             Errors.append("Train folder")
@@ -124,7 +124,7 @@ def get_argv(argv, prog=None, correction=False, show=False):
 
 
 
-        if "lr" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo"]:
+        if "lr" not in dir(Args) and prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
 
             print(f"{c.r}WARNING : learning rate is not define (lr=<learning_rate>){c.d}")
             Errors.append("Learning rate") # raise Exception("Learning rate is not define")
@@ -172,7 +172,7 @@ def get_argv(argv, prog=None, correction=False, show=False):
 
 
 
-    if prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo"]:
+    if prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
 
         Args.model_loss = f"{Args.model}_{Args.loss}"
         Args.fulltrain_str = f"{Args.from_prefixe}{Args.train}"

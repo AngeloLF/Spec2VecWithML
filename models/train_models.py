@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-sys.path.append('./Spec2vecModels/')
+sys.path.append('./models/')
 from get_argv import get_argv, get_device
 import params
 from losses import give_Loss_Function, Chi2Loss
@@ -35,7 +35,7 @@ def load_from_pretrained(model_name, loss_name, folder_pretrain, prelr, device, 
 
 
 
-def load_model(model_name, device, path2architecture='./Spec2vecModels/'):
+def load_model(model_name, device, path2architecture='./models/'):
 
     if model_name is None:
 
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     ### Definition of paths
     path = params.path                                             # Ex. : ./results/output_simu
     Args.train_name = f"{Args.from_prefixe}{Args.train}_{Args.lr_str}"  # Ex. : (pre_)(trainCalib_1e-4_)train16k_1e-04
-    Args.full_out_path = f"{params.out_path}/{params.out_dir}/{name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2
+    Args.full_out_path = f"{params.out_path}/{params.out_dir}/{name}"   # Ex. : ./results/models_output/SCaM_chi2
 
     Args.train_inp_dir = f"{path}/{Args.train}/{model.folder_input}"    # Ex. : ./results/output_simu/train16k/image
     Args.train_out_dir = f"{path}/{Args.train}/{model.folder_output}"   # Ex. : ./results/output_simu/train16k/spectrum
@@ -257,12 +257,12 @@ if __name__ == "__main__":
 
     # Define path of losses
     Args.output = SimpleNamespace()
-    Args.output.loss       = f"{Args.full_out_path}/{params.out_loss}"       # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss
-    Args.output.loss_mse   = f"{Args.full_out_path}/{params.out_loss_mse}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss_mse
-    Args.output.loss_png   = f"{Args.full_out_path}/{params.out_loss_png}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/loss_png -> save loss on png
-    Args.output.state      = f"{Args.full_out_path}/{params.out_states}"     # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/states
-    Args.output.divers     = f"{Args.full_out_path}/{params.out_divers}"     # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/divers
-    Args.output.divers_png = f"{Args.full_out_path}/{params.out_divers_png}" # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/divers_png -> save divers on png
+    Args.output.loss       = f"{Args.full_out_path}/{params.out_loss}"       # Ex. : ./results/models_output/SCaM_chi2/loss
+    Args.output.loss_mse   = f"{Args.full_out_path}/{params.out_loss_mse}"   # Ex. : ./results/models_output/SCaM_chi2/loss_mse
+    Args.output.loss_png   = f"{Args.full_out_path}/{params.out_loss_png}"   # Ex. : ./results/models_output/SCaM_chi2/loss_png -> save loss on png
+    Args.output.state      = f"{Args.full_out_path}/{params.out_states}"     # Ex. : ./results/models_output/SCaM_chi2/states
+    Args.output.divers     = f"{Args.full_out_path}/{params.out_divers}"     # Ex. : ./results/models_output/SCaM_chi2/divers
+    Args.output.divers_png = f"{Args.full_out_path}/{params.out_divers_png}" # Ex. : ./results/models_output/SCaM_chi2/divers_png -> save divers on png
 
     # find tel
     if "ctio" in Args.train : tel = "ctio"
@@ -270,23 +270,23 @@ if __name__ == "__main__":
     else : tel = None
 
     # Create folder in case ...
-    os.makedirs(f"{params.out_path}/{params.out_dir}", exist_ok=True) # Ex. : ./results/Spec2vecModels_Results
-    os.makedirs(Args.full_out_path, exist_ok=True)                         # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2
+    os.makedirs(f"{params.out_path}/{params.out_dir}", exist_ok=True) # Ex. : ./results/models_output
+    os.makedirs(Args.full_out_path, exist_ok=True)                         # Ex. : ./results/models_output/SCaM_chi2
     for f in dir(Args.output):
         if not f.startswith("__") and not f.endswith("__"): 
             os.makedirs(getattr(Args.output, f), exist_ok=True)
 
     # Folder for push epoch
-    Args.output.epoch = f"{Args.full_out_path}/{params.out_epoch}"      # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch
+    Args.output.epoch = f"{Args.full_out_path}/{params.out_epoch}"      # Ex. : ./results/models_output/SCaM_chi2/epoch
     os.makedirs(Args.output.epoch, exist_ok=True)
-    Args.output.epoch_here = f"{Args.output.epoch}/{Args.train_name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/epoch/train16k_1e-04
+    Args.output.epoch_here = f"{Args.output.epoch}/{Args.train_name}"   # Ex. : ./results/models_output/SCaM_chi2/epoch/train16k_1e-04
     if Args.train_name in os.listdir(Args.output.epoch) : shutil.rmtree(Args.output.epoch_here)
     os.mkdir(Args.output.epoch_here)
 
     # Folder for traning evolution
-    Args.output.evolution = f"{Args.full_out_path}/{params.out_evolution}"      # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/training_evolution
+    Args.output.evolution = f"{Args.full_out_path}/{params.out_evolution}"      # Ex. : ./results/models_output/SCaM_chi2/training_evolution
     os.makedirs(Args.output.evolution, exist_ok=True)
-    Args.output.evolution_here = f"{Args.output.evolution}/{Args.train_name}"   # Ex. : ./results/Spec2vecModels_Results/SCaM_chi2/training_evolution/train16k_1e-04
+    Args.output.evolution_here = f"{Args.output.evolution}/{Args.train_name}"   # Ex. : ./results/models_output/SCaM_chi2/training_evolution/train16k_1e-04
     if Args.train_name in os.listdir(Args.output.evolution) : shutil.rmtree(Args.output.evolution_here)
     os.mkdir(Args.output.evolution_here)
 
