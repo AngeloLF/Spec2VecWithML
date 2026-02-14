@@ -39,9 +39,12 @@ if __name__ == "__main__":
 
 
 
-    ## 
+    ##
     time = 10.0
-    nb_frame = nb_epochs
+    if "zoom" in sys.argv:
+        nb_frame = int(nb_epochs / 10)
+    else:
+        nb_frame = nb_epochs
     fps = nb_frame / time
     x = np.arange(300, 1100)
 
