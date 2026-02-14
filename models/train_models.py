@@ -308,9 +308,7 @@ if __name__ == "__main__":
 
     # Keep first img / spectrum file for train & valid
     Args.train0_img = train_dataset[0][0].unsqueeze(0).to(device)
-    Args.train0_spec = np.load(train_dataset.spectrum_files[0])
     Args.valid0_img = valid_dataset[0][0].unsqueeze(0).to(device)
-    Args.valid0_spec = np.load(valid_dataset.spectrum_files[0])
 
     # Some print
     print(f"{c.ly}INFO : Size of the loaded train dataset : {c.d}{c.y}{len(train_dataset)}{c.d}")

@@ -356,6 +356,11 @@ class MLED_Model(nn.Module):
             train_list_loss[epoch] = train_loss
             train_list_loss_mse[epoch] = train_loss_mse / len(train_loader)
             scheduler.step(train_loss)
+
+            # Predict of first train
+            spectrum_model.eval()
+            pred_train0 = spectrum_model(Args.train0_img).cpu().detach().numpy()[0]
+            np.save(f"{Args.output.evolution_here}/train_{epoch}.npy", pred_train0)
         
 
             ### Validation
@@ -378,6 +383,11 @@ class MLED_Model(nn.Module):
                     valid_loss_mse += mse_loss(pred_spectra, spectra)
 
             valid_loss = valid_loss / len(valid_loader)
+
+            # Predict of first train
+            spectrum_model.eval()
+            pred_train0 = spectrum_model(Args.valid0_img).cpu().detach().numpy()[0]
+            np.save(f"{Args.output.evolution_here}/valid_{epoch}.npy", pred_train0)
 
             # Show epoch
             lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
