@@ -79,7 +79,7 @@ def load_optim(args):
 
 
 
-def default_training(Args, device, train_loader, valid_loader):
+def default_training(Args, device, train_loader, valid_loader, loss_function):
 
     ### Define losses
 
@@ -171,7 +171,7 @@ def default_training(Args, device, train_loader, valid_loader):
                 valid_loss_mse += mse_loss(outputs, spectra) * images.size(0)
                 valid_loss_chi2 += chi2_loss(outputs, spectra) * images.size(0)
 
-        valid_loss = valid_loss / len(valid_dataset)
+        valid_loss = valid_loss / len(valid_loader)
         # Predict of first train
         model.eval()
         pred_valid0 = model(Args.valid0_img).cpu().detach().numpy()[0]
@@ -333,7 +333,7 @@ if __name__ == "__main__":
 
 
     ### Training :
-    best_state, run_stats = training_function(Args, device, train_loader, valid_loader)
+    best_state, run_stats = training_function(Args, device, train_loader, valid_loader, loss_function)
 
     
 

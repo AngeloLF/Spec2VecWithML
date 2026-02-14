@@ -182,7 +182,7 @@ class MLED_Model(nn.Module):
 
 
     # particular training function
-    def particular_training(self, Args, device, train_loader, valid_loader):
+    def particular_training(self, Args, device, train_loader, valid_loader, loss_function="MSE"):
 
         # some variables ...
         latent_dim = 512
