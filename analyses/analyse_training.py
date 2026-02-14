@@ -52,27 +52,37 @@ if __name__ == "__main__":
     fps = nb_frame / time
     x = np.arange(300, 1100)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(2, 1)
 
-    true, = ax.plot(x, true_spectrum, color='g', label="True")
-    pred, = ax.plot(x, np.load(f"{folder_evolution}/train_0.npy"), c='r', label="Pred")
+    train_true, = ax[0].plot(x, true_spectrum, color='g', label="Train set")
+    train_pred, = ax[0].plot(x, np.load(f"{folder_evolution}/train_0.npy"), c='r', label="Prediction")
+    ax[0].legend()
+    ax[0].set_xlabel(r"$lambdas$ (nm)")
+    ax[0].set_ylabel(f"Intensity (e-)")
+    ax[0].set_title(f"Evolution of {Args.model}_{Args.loss} training with {Args.fulltrain_str}_{Args.lr_str}")
 
-    ax.legend()
-    ax.set_xlabel(r"$lambdas$ (nm)")
-    ax.set_ylabel(f"Intensity (e-)")
+    valid_true, = ax[1].plot(x, true_spectrum, color='g', label="Valid set")
+    valid_pred, = ax[1].plot(x, np.load(f"{folder_evolution}/valid_0.npy"), c='r', label="Prediction")
+    ax[1].legend()
+    ax[1].set_xlabel(r"$lambdas$ (nm)")
+    ax[1].set_ylabel(f"Intensity (e-)")
+    ax[1].set_title(f"Epoch n°1")
+
     pbar = tqdm(total=nb_frame)
 
     def update(frame):
         pbar.update(1)
 
         # update image
-        pred.set_ydata(np.load(f"{folder_evolution}/train_{frame}.npy"))
+        train_pred.set_ydata(np.load(f"{folder_evolution}/train_{frame}.npy"))
+        valid_pred.set_ydata(np.load(f"{folder_evolution}/valid_{frame}.npy"))
+        ax[1].set_title(f"Epoch n°{frame+1}")
         
-        return pred,
+        return train_pred,
 
     ani = animation.FuncAnimation(fig, update, frames=nb_frame, blit=False, repeat=True)
 
-    plt.title(f"Evolution of {Args.model}_{Args.loss} training with {Args.fulltrain_str}_{Args.lr_str}")
+    plt.tight_layout()
     ani.save(f"./results/models_output/{Args.model}_{Args.loss}/divers_png/{Args.fulltrain_str}_{Args.lr_str}{suffixe}.gif", fps=fps, dpi=300)
     plt.close()
     pbar.close()
