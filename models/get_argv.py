@@ -99,7 +99,7 @@ def get_argv(argv, prog=None, correction=False, show=False):
 
 
 
-        if "valid" not in dir(Args) and prog in ["training"]:
+        if "valid" not in dir(Args) and prog in ["training", "analyse_training"]:
 
             print(f"{c.r}WARNING : valid folder is not define (valid=<valid_folder>){c.d}")
             Errors.append("Valid folder")# raise Exception("Valid folder is not define")

@@ -22,7 +22,8 @@ if __name__ == "__main__":
                 nb_simu = len(os.listdir(f"./results/output_simu/{Args.train}/spectrum"))
                 n_str = len(str(nb_simu))
 
-                true_spectrum = np.load(f"./results/output_simu/{Args.train}/spectrum/spectrum_{0:0>{n_str}}.npy")
+                true_train_spectrum = np.load(f"./results/output_simu/{Args.train}/spectrum/spectrum_{0:0>{n_str}}.npy")
+                true_valid_spectrum = np.load(f"./results/output_simu/{Args.valid}/spectrum/spectrum_{0:0>{n_str}}.npy")
                 folder_evolution = f"./results/models_output/{Args.model}_{Args.loss}/training_evolution/{Args.fulltrain_str}_{Args.lr_str}"
                 nb_epochs = int(len(os.listdir(folder_evolution))/2)
 
