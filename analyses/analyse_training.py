@@ -19,11 +19,14 @@ if __name__ == "__main__":
             
             if f"{Args.fulltrain_str}_{Args.lr_str}" in os.listdir(f"./results/models_output/{Args.model}_{Args.loss}/training_evolution"):
 
-                nb_simu = len(os.listdir(f"./results/output_simu/{Args.train}/spectrum"))
-                n_str = len(str(nb_simu))
+                nb_train_simu = len(os.listdir(f"./results/output_simu/{Args.train}/spectrum"))
+                n_train_str = len(str(nb_train_simu))
+                true_train_spectrum = np.load(f"./results/output_simu/{Args.train}/spectrum/spectrum_{0:0>{n_train_str}}.npy")
 
-                true_train_spectrum = np.load(f"./results/output_simu/{Args.train}/spectrum/spectrum_{0:0>{n_str}}.npy")
-                true_valid_spectrum = np.load(f"./results/output_simu/{Args.valid}/spectrum/spectrum_{0:0>{n_str}}.npy")
+                nb_valid_simu = len(os.listdir(f"./results/output_simu/{Args.valid}/spectrum"))
+                n_valid_str = len(str(nb_valid_simu))
+                true_valid_spectrum = np.load(f"./results/output_simu/{Args.valid}/spectrum/spectrum_{0:0>{n_valid_str}}.npy")
+
                 folder_evolution = f"./results/models_output/{Args.model}_{Args.loss}/training_evolution/{Args.fulltrain_str}_{Args.lr_str}"
                 nb_epochs = int(len(os.listdir(folder_evolution))/2)
 
@@ -55,14 +58,14 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(2, 1)
 
-    train_true, = ax[0].plot(x, true_spectrum, color='g', label="Train set")
+    train_true, = ax[0].plot(x, true_train_spectrum, color='g', label="Train set")
     train_pred, = ax[0].plot(x, np.load(f"{folder_evolution}/train_0.npy"), c='r', label="Prediction")
     ax[0].legend()
     ax[0].set_xlabel(r"$lambdas$ (nm)")
     ax[0].set_ylabel(f"Intensity (e-)")
     ax[0].set_title(f"Evolution of {Args.model}_{Args.loss} training with {Args.fulltrain_str}_{Args.lr_str}")
 
-    valid_true, = ax[1].plot(x, true_spectrum, color='g', label="Valid set")
+    valid_true, = ax[1].plot(x, true_valid_spectrum, color='g', label="Valid set")
     valid_pred, = ax[1].plot(x, np.load(f"{folder_evolution}/valid_0.npy"), c='r', label="Prediction")
     ax[1].legend()
     ax[1].set_xlabel(r"$lambdas$ (nm)")
