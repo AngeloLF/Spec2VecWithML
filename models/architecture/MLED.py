@@ -282,6 +282,31 @@ class MLED_Model(nn.Module):
 
         if Args.save:
             torch.save(best_state_AE, save_EncodeDecoder)
+        print(f"{c.lm}INFO : Save learnings rates (& plot) ... {c.d}")
+
+        plt.figure(figsize=(16, 9))
+
+        # Les losses
+        plt.plot(np.arange(1, Args.epochs+1), train_list_loss_AE, c="k", ls=":", label="Train loss")
+        plt.plot(np.arange(1, Args.epochs+1), valid_list_loss_AE, c="k", label="Valid loss")
+        plt.axvline(best_state["epoch"], c="g", ls="-", label=f"Best state at valid loss = {best_val_loss_AE:.3e}")
+        plt.ylabel(f"Loss {Args.loss}", color="black")
+        plt.tick_params(axis="y", labelcolor="black")
+        plt.legend()
+        plt.yscale("log")
+
+        # Lr
+        plt.twinx()
+        plt.plot(np.arange(1, Args.epochs+1), lrates, c="r")
+        plt.ylabel("Learning rates", color="red")
+        plt.tick_params(axis="y", labelcolor="red", color="r")
+        plt.yscale("log")
+
+        # final config
+        plt.xlabel("Epochs")
+        plt.title("Evolution of learning rates")
+        plt.savefig(f"{Args.output.divers_png}/{Args.train_name}_lr_AE.png")
+        plt.close()
         print(f"{c.lm}INFO : Save of the AutoEncoder MLED at {save_EncodeDecoder}{c.d}")
 
 
