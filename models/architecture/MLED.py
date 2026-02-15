@@ -289,7 +289,7 @@ class MLED_Model(nn.Module):
         # Les losses
         plt.plot(np.arange(1, Args.epochs+1), train_list_loss_AE, c="k", ls=":", label="Train loss")
         plt.plot(np.arange(1, Args.epochs+1), valid_list_loss_AE, c="k", label="Valid loss")
-        plt.axvline(best_state["epoch"], c="g", ls="-", label=f"Best state at valid loss = {best_val_loss_AE:.3e}")
+        plt.axvline(best_state_AE["epoch"], c="g", ls="-", label=f"Best state at valid loss = {best_val_loss_AE:.3e}")
         plt.ylabel(f"Loss {Args.loss}", color="black")
         plt.tick_params(axis="y", labelcolor="black")
         plt.legend()
@@ -341,7 +341,7 @@ class MLED_Model(nn.Module):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
         # On peut freeze l'encoder au début pour forcer à changer d'abord les poids de la partie spectrum
-        for param in model.encoder.parameters():
+        for param in spectrum_model.encoder.parameters():
             param.requires_grad = False
 
 
