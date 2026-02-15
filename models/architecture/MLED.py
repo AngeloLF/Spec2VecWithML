@@ -216,12 +216,12 @@ class MLED_Model(nn.Module):
 
 
             ### Training
-            autoencoder.train()
             train_loss = 0.0
             train_loss_mse = 0.0
 
             for images, spectra in tqdm(train_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Train)"):
                 
+                autoencoder.train()
                 images = images.to(device)
                 
                 # Forward
@@ -312,29 +312,29 @@ class MLED_Model(nn.Module):
         # model, opti & scheduler
         spectrum_model = MLED_Model(autoencoder.encoder, spectrum_length=spectrum_length)
         spectrum_model = spectrum_model.to(device)
-        optimizer = torch.optim.Adam(spectrum_model.parameters(), lr=Args.lr)
+        optimizer = torch.optim.Adam(spectrum_model.parameters(), lr=Args.lr/10.)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
         # On peut freeze l'encoder au début pour forcer à changer d'abord les poids de la partie spectrum
-        # for param in model.encoder.parameters():
-        #     param.requires_grad = False
+        for param in model.encoder.parameters():
+            param.requires_grad = False
 
 
         for epoch in range(Args.epochs):
 
             # Après quelques epochs, on peut dégeler l'encoder pour du fine-tuning
-            # if epoch == 20:
-            #     for param in spectrum_model.encoder.parameters():
-            #         param.requires_grad = True
+            if epoch == 20:
+                for param in spectrum_model.encoder.parameters():
+                    param.requires_grad = True
 
 
             ### Training
-            spectrum_model.train()
             train_loss = 0.0
             train_loss_mse = 0.0
 
             for images, spectra in tqdm(train_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Train)"):
-                
+
+                spectrum_model.train()
                 images = images.to(device)
                 spectra = spectra.to(device)
                 
