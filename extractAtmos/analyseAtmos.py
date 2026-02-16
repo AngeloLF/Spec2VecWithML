@@ -10,8 +10,8 @@ from copy import deepcopy
 sys.path.append('./models/')
 from get_argv import get_argv
 
-
-
+sys.path.append('./analyses')
+from recup_score import generate_html_table
 
 
 
@@ -33,6 +33,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     if Args.test in os.listdir(f"{pathSave}"):
         shutil.rmtree(f"{pathSave}/{Args.test}")
     os.mkdir(f"{pathSave}/{Args.test}")
+    os.mkdir(f"{pathSave}/{Args.test}/html")
 
     for t in targets:
         os.mkdir(f"{pathSave}/{Args.test}/{t}")
@@ -101,7 +102,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             y = true_vals
 
 
-        for mode in ["plot", "subplot", "full"]:
+        for mode in ["plot"]: #, "subplot", "full"]:
 
             plt.figure(figsize=(16, 9))
 
@@ -117,8 +118,8 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
                 res = full_data[savef][t][0][true_sort]-y
                 
-                score = np.nanmean(np.abs(res))
-                std = np.nanstd(np.abs(res))
+                score = np.nanmean(np.sqrt(res**2))
+                std = np.nanstd(np.sqrt(res**2))
                 score_mean = np.nanmean(res)
                 score_std = np.nanstd(res)
 
@@ -134,7 +135,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                     plt.xlabel(t)
                     plt.ylabel("Residus")
                     plt.axhline(0, color="k", ls=":", label="True value")
-                    plt.title(f"{savef} : residus abs = {score:.3f}$\pm${std:.3f} [mean={score_mean:.3f}$\pm${score_std:.3f}]")
+                    plt.title(f"{savef} : residus abs = {score:.3f}$\\pm${std:.3f} [mean={score_mean:.3f}$\\pm${score_std:.3f}]")
                     plt.ylim(np.nanmin(res), np.nanmax(res))
                     if mode == "plot": 
                         plt.savefig(f"{pathSave}/{Args.test}/{t}/{t}_{savef}.png")
@@ -173,31 +174,109 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         ]
 
 
-    for inPC in [False, True]:
+    for oneByOne in [False, True]:
 
-        plt.figure(figsize=(16, 9))
+        for inPC in [False, True]:
 
-        for i, (t, borne) in enumerate(zip(["pwv", "vaod", "ozone", "total"], [borne_PWV, borne_VAOD, borne_OZONE, None])):
+            plt.figure(figsize=(16, 9))
 
-            x = np.arange(len(saveFolders))
-            divide = (borne[1] - borne[0])/100. if inPC and borne is not None else 1.0
-            y = [scores[savef][t][0] / divide for savef in saveFolders]
-            yerr = [scores[savef][t][1] / divide for savef in saveFolders]
+            for i, (t, borne) in enumerate(zip(["pwv", "vaod", "ozone", "total"], [borne_PWV, borne_VAOD, borne_OZONE, None])):
 
-            plt.subplot(2, 2, i+1)
-            plt.errorbar(x, y, yerr=yerr, color=colors[i], ls="", marker=".")
-            plt.xticks(x, saveFolders)
-            if inPC or t == "total":
-                plt.ylabel(f"{t} (%)")
-            else:
-                plt.ylabel(f"{t}")
+                x = np.arange(len(saveFolders))
+                divide = (borne[1] - borne[0])/100. if inPC and borne is not None else 1.0
+                y = np.array([scores[savef][t][0] / divide for savef in saveFolders])
+                yerr = [scores[savef][t][1] / divide for savef in saveFolders]
 
-        plt.tight_layout()
-        if inPC:
-            plt.savefig(f"{pathSave}/{Args.test}/resume_all_INPC.png")
-        else:
-            plt.savefig(f"{pathSave}/{Args.test}/resume_all.png")
+                argsort_y = np.argsort(y)
 
+                if not oneByOne:
+                    plt.subplot(2, 2, i+1)
+
+                plt.errorbar(x, y[argsort_y], yerr=yerr, color=colors[i], ls="", marker=".")
+                plt.xticks(x, np.array(saveFolders)[argsort_y])
+                if inPC or t == "total":
+                    plt.ylabel(f"{t} (%)")
+                else:
+                    plt.ylabel(f"{t}")
+
+                if oneByOne:
+                    plt.tight_layout()
+                    if inPC:
+                        plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_INPC_.png")
+                    else:
+                        plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_.png")
+
+            if not oneByOne:
+                plt.tight_layout()
+                if inPC:
+                    plt.savefig(f"{pathSave}/{Args.test}/resume_all_INPC.png")
+                else:
+                    plt.savefig(f"{pathSave}/{Args.test}/resume_all.png")
+
+
+
+
+    # make HTML
+    print(f"\nMake HTML results")
+    saveFolders.sort()
+
+    y = np.zeros((len(saveFolders), len(targets)+3)) + np.inf
+    e = np.zeros((len(saveFolders), len(targets)+3)) + np.inf
+    x = np.zeros((len(saveFolders), len(targets)+3)).astype(str)
+    x[:, :] = '---'
+
+    
+    for m, model in enumerate(saveFolders):
+
+        print(f"    model {model}")
+
+        tot_mean = list()
+        tot_std = list()
+
+        for t, target in enumerate(targets):
+
+            print(f"        test {target}")
+
+            mean, std = scores[model][target]
+            y[m, t] = mean
+            e[m, t] = std
+            x[m, t] = f" {mean:.2f} ± {std:.2f} "
+
+            tot_mean.append(mean)
+            tot_std.append(std)
+
+        y[m, -3] = scores[model]['total'][0]
+        e[m, -3] = scores[model]['total'][1]
+        x[m, -3] = f"{scores[model]['total'][0]:.2f} ± {scores[model]['total'][1]:.2f}"
+
+
+
+
+    y[:, -3][np.isnan(y[:, -3])] = np.inf
+    nb_m = len(y[:, -3])
+    order = np.zeros(nb_m)
+
+    for m, cl in enumerate(np.argsort(y[:, -3])):
+
+        order[cl] = m
+
+    order_norma = order / (nb_m-1) * 100
+
+    y[:, -1] = order_norma + 100
+    x[:, -1] = [f"{o:.2f} %" for o in order_norma]
+
+    y[:, -2] = order_norma + 100
+    x[:, -2] = [f"{1+o}" for o in order]
+
+
+    for sorting, sorting_str in [(False, ""), (True, "_sorting")]:
+
+        with open(f"{pathSave}/{Args.test}/html/extract_atmo{sorting_str}.html", "w") as f:
+
+            html_codes = [f"<h1>Extraction Atmosphere</h1>"]
+            html_codes.append(generate_html_table(targets+["Total", "Classement (N)", "Classement (%)"], saveFolders, x, y, sorting=sorting))
+
+            f.write('\n'.join(html_codes))
 
 
 

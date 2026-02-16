@@ -34,7 +34,7 @@ def recup_mt(scores, mode="dispo"):
 
 
 
-def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', savefig_name=None, markers=None, colors=None, score=None):
+def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', savefig_name=None, markers=None, colors=None):
 
 
     if sorting:
@@ -45,48 +45,6 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
         text = text[index]
         lignes = [lignes[i] for i in index]
         lignes4graph = [ligne for ligne in lignes if not ("cal" in ligne and not "wc" in ligne)]
-
-        # y[y == np.inf] = np.nan
-
-        """
-        for color_palette, palette in colors.items():
-
-            valSpectractor = None
-
-            for zoom, zoom_str in [(lignes4graph, ""), (lignes4graph[:32], "zoom_")]:
-
-                plt.figure(figsize=(19, 10))
-
-                for i, name in enumerate(zoom):
-
-                    xg = np.ones(len(colonnes)-2) * i
-                    yg = y[i][:-2]
-
-                    color = 'k'
-                    for pal, col in palette.items():
-                        if   color_palette != "learningRate" and pal in name      : color = col
-                        elif color_palette == "learningRate" and pal == name[-5:] : color = col
-
-                    plt.plot(xg, yg, color=color)
-
-                    plt.scatter([i], yg[-1], color=color, marker="s")
-
-                    if "Spectractor_x" in name and valSpectractor is None : valSpectractor = y[i][-3]
-                
-                for pal, col in palette.items():
-                    plt.scatter([], [], color=col, marker='s', label=pal.replace("_", ""))
-
-                if valSpectractor is not None : plt.axhline(valSpectractor, color='k', linestyle=':')
-                plt.xticks(np.arange(len(zoom)), zoom, rotation=90)
-                plt.tight_layout()
-                plt.yscale("log")
-                plt.legend()
-                # plt.show()
-                try:
-                    plt.savefig(f"{savefig_name}_{zoom_str}{score}_{color_palette}.png")
-                except:
-                    plt.close()"""
-
 
 
     tds = {
@@ -111,7 +69,7 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
     # En-tête
     html += '  <tr><th></th>'  # Coin supérieur gauche vide
     for col in colonnes:
-        html += f'<th>{col}</th>'
+        html += f'<th> {col} </th>'
     html += '</tr>\n'
 
 
@@ -134,7 +92,7 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
 
     # Lignes de données
     for i, ligne in enumerate(lignes):
-        html += f'  <tr><th>{ligne}</th>'
+        html += f'  <tr><th> {ligne} </th>'
         for j in range(len(colonnes)):
 
             if   i == argmin[j] : td = tds["min"]
@@ -255,7 +213,7 @@ def make_score(score_type, models, tests):
                 for i, typeScore in enumerate(["classic", "norma"]):
 
                     html_codes.append(f"<h2>{typeScore}</h2>")
-                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, savefig_name=f"{path_resume}/graph/zzz", score=score))
+                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, savefig_name=f"{path_resume}/graph/zzz"))
 
                 f.write('\n'.join(html_codes))
 
