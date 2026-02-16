@@ -104,9 +104,9 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
         for mode in ["plot"]: #, "subplot", "full"]:
 
-            plt.figure(figsize=(16, 9))
-
             for i, savef in enumerate(saveFolders):
+
+                plt.figure(figsize=(16, 9))
 
                 res = full_data[savef][t][0][true_sort]-y
                 
