@@ -214,14 +214,14 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             mean, std = scores[model][target]
             y[m, t] = mean
             e[m, t] = std
-            x[m, t] = f" {mean:.3f} ± {std:.3f} "
+            x[m, t] = f" {mean:.3f} &plusmn {std:.3f} "
 
             tot_mean.append(mean)
             tot_std.append(std)
 
         y[m, -3] = scores[model]['total'][0]
         e[m, -3] = scores[model]['total'][1]
-        x[m, -3] = f"{scores[model]['total'][0]:.2f} ± {scores[model]['total'][1]:.2f}"
+        x[m, -3] = f"{scores[model]['total'][0]:.2f} &plusmn {scores[model]['total'][1]:.2f}"
 
 
 
@@ -247,7 +247,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
         with open(f"{pathSave}/{Args.test}/html/extract_atmo{sorting_str}.html", "w", encoding="utf-8") as f:
 
-            html_codes = [f"<h1>Extraction Atmosphere</h1>"]
+            html_codes = [f'<meta charset="UTF-8">', f"<h1>Extraction Atmosphere</h1>"]
             html_codes.append(generate_html_table(targets+["Total", "Classement (N)", "Classement (%)"], saveFolders, x, y, sorting=sorting))
 
             f.write('\n'.join(html_codes))
