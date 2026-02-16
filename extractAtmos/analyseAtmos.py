@@ -152,9 +152,13 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
         for inPC in [False, True]:
 
-            plt.figure(figsize=(16, 9))
+            if not oneByOne:
+                plt.figure(figsize=(16, 9))
 
             for i, (t, borne) in enumerate(zip(["pwv", "vaod", "ozone", "total"], [borne_PWV, borne_VAOD, borne_OZONE, None])):
+
+                if oneByOne:
+                    plt.figure(figsize=(16, 9))
 
                 x = np.arange(len(saveFolders))
                 divide = (borne[1] - borne[0])/100. if inPC and borne is not None else 1.0
@@ -248,7 +252,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         with open(f"{pathSave}/{Args.test}/html/extract_atmo{sorting_str}.html", "w", encoding="utf-8") as f:
 
             html_codes = [f'<meta charset="UTF-8">', f"<h1>Extraction Atmosphere</h1>"]
-            html_codes.append(generate_html_table(targets+["Total", "Classement (N)", "Classement (%)"], saveFolders, x, y, sorting=sorting))
+            html_codes.append(generate_html_table(targets+["Total", "Classement (N)", "Classement (%)"], saveFolders_str, x, y, sorting=sorting))
 
             f.write('\n'.join(html_codes))
 
