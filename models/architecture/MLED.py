@@ -192,6 +192,7 @@ class MLED_Model(nn.Module):
         best_state_AE = None
         lrates = np.zeros(Args.epochs)
 
+
         # Train loss
         train_list_loss_AE = np.zeros(Args.epochs)
         valid_list_loss_AE = np.zeros(Args.epochs)
@@ -208,106 +209,120 @@ class MLED_Model(nn.Module):
         print(f"{c.lm}\nINFO : Beginning of training encoder (1/2){c.d}")
         autoencoder = MLED_EncoderDecoder(latent_dim=latent_dim)
         autoencoder = autoencoder.to(device)
-        optimizer = torch.optim.Adam(autoencoder.parameters(), lr=Args.lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
-        
-
-        for epoch in range(Args.epochs):
 
 
-            ### Training
-            train_loss = 0.0
-            train_loss_mse = 0.0
+        if "keep_ae_training" in sys.argv:
 
-            for images, spectra in tqdm(train_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Train)"):
-                
-                autoencoder.train()
-                images = images.to(device)
-                
-                # Forward
-                reconstruction, latent = autoencoder(images)
-                loss = F.mse_loss(reconstruction, images)
-                
-                # Backward
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                train_loss += loss.item()
+            MODEL_W = save_EncodeDecoder
+            print(f"{c.lm}INFO : Loading {Args.model} with w. : {c.tu}{MODEL_W}{c.ru} ... {c.d}")
 
-                # Evaluate with mse
-                autoencoder.eval()
-                train_loss_mse += mse_loss(reconstruction, images)
+            state = torch.load(MODEL_W, map_location=device)
+            autoencoder.load_state_dict(state['model_state_dict'])
+            autoencoder = autoencoder.to(device)
+            print(f"{c.lm}Loading ok{c.d}")
+
+
+        else:
+            optimizer = torch.optim.Adam(autoencoder.parameters(), lr=Args.lr)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
             
-            train_loss = train_loss / len(train_loader)
-            train_list_loss_AE[epoch] = train_loss
-            train_list_loss_mse_AE[epoch] = train_loss_mse / len(train_loader)
-            scheduler.step(train_loss)
-        
 
-            ### Validation
-            autoencoder.eval()
-            valid_loss = 0.0
-            valid_loss_mse = 0.0
-            
-            with torch.no_grad():
+            for epoch in range(Args.epochs):
 
-                for images, spectra in tqdm(valid_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Validation)"):
 
+                ### Training
+                train_loss = 0.0
+                train_loss_mse = 0.0
+
+                for images, spectra in tqdm(train_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Train)"):
+                    
+                    autoencoder.train()
                     images = images.to(device)
+                    
+                    # Forward
                     reconstruction, latent = autoencoder(images)
-
                     loss = F.mse_loss(reconstruction, images)
-                    valid_loss += loss.item()
+                    
+                    # Backward
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                    train_loss += loss.item()
 
                     # Evaluate with mse
                     autoencoder.eval()
-                    valid_loss_mse += mse_loss(reconstruction, images)
+                    train_loss_mse += mse_loss(reconstruction, images)
+                
+                train_loss = train_loss / len(train_loader)
+                train_list_loss_AE[epoch] = train_loss
+                train_list_loss_mse_AE[epoch] = train_loss_mse / len(train_loader)
+                scheduler.step(train_loss)
+            
 
-            valid_loss = valid_loss / len(valid_loader)
+                ### Validation
+                autoencoder.eval()
+                valid_loss = 0.0
+                valid_loss_mse = 0.0
+                
+                with torch.no_grad():
 
-            # Show epoch
-            lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
-            print(f"Epoch [{epoch+1}/{Args.epochs}], loss train = {c.g}{train_loss:.6f}{c.d}, val loss = {c.r}{valid_loss:.6f}{c.d} | LR={c.y}{lrates[epoch]:.2e}{c.d}")
-            with open(f"{Args.output.epoch_here}/INFO - epoch {epoch+1} - {Args.epochs} - {train_loss:.6f} , {valid_loss:.6f}", "wb") as f : pass
+                    for images, spectra in tqdm(valid_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Validation)"):
 
-            # save state at each epoch to be able to reload and continue the optimization
-            if valid_loss < best_val_loss_AE:
+                        images = images.to(device)
+                        reconstruction, latent = autoencoder(images)
 
-                best_val_loss_AE = valid_loss
-                best_state_AE = {"epoch": epoch + 1, "model_state_dict": autoencoder.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss_AE}
+                        loss = F.mse_loss(reconstruction, images)
+                        valid_loss += loss.item()
 
-            # save loss
-            valid_list_loss_AE[epoch] = valid_loss
-            valid_list_loss_mse_AE[epoch] = valid_loss_mse / len(valid_loader)
+                        # Evaluate with mse
+                        autoencoder.eval()
+                        valid_loss_mse += mse_loss(reconstruction, images)
 
-        if Args.save:
-            torch.save(best_state_AE, save_EncodeDecoder)
-        print(f"{c.lm}INFO : Save learnings rates (& plot) ... {c.d}")
+                valid_loss = valid_loss / len(valid_loader)
 
-        plt.figure(figsize=(16, 9))
+                # Show epoch
+                lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
+                print(f"Epoch [{epoch+1}/{Args.epochs}], loss train = {c.g}{train_loss:.6f}{c.d}, val loss = {c.r}{valid_loss:.6f}{c.d} | LR={c.y}{lrates[epoch]:.2e}{c.d}")
+                with open(f"{Args.output.epoch_here}/INFO - epoch {epoch+1} - {Args.epochs} - {train_loss:.6f} , {valid_loss:.6f}", "wb") as f : pass
 
-        # Les losses
-        plt.plot(np.arange(1, Args.epochs+1), train_list_loss_AE, c="k", ls=":", label="Train loss")
-        plt.plot(np.arange(1, Args.epochs+1), valid_list_loss_AE, c="k", label="Valid loss")
-        plt.axvline(best_state_AE["epoch"], c="g", ls="-", label=f"Best state at valid loss = {best_val_loss_AE:.3e}")
-        plt.ylabel(f"Loss {Args.loss}", color="black")
-        plt.tick_params(axis="y", labelcolor="black")
-        plt.legend()
-        plt.yscale("log")
+                # save state at each epoch to be able to reload and continue the optimization
+                if valid_loss < best_val_loss_AE:
 
-        # Lr
-        plt.twinx()
-        plt.plot(np.arange(1, Args.epochs+1), lrates, c="r")
-        plt.ylabel("Learning rates", color="red")
-        plt.tick_params(axis="y", labelcolor="red", color="r")
-        plt.yscale("log")
+                    best_val_loss_AE = valid_loss
+                    best_state_AE = {"epoch": epoch + 1, "model_state_dict": autoencoder.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss_AE}
 
-        # final config
-        plt.xlabel("Epochs")
-        plt.title("Evolution of learning rates")
-        plt.savefig(f"{Args.output.divers_png}/{Args.train_name}_lr_AE.png")
-        plt.close()
-        print(f"{c.lm}INFO : Save of the AutoEncoder MLED at {save_EncodeDecoder}{c.d}")
+                # save loss
+                valid_list_loss_AE[epoch] = valid_loss
+                valid_list_loss_mse_AE[epoch] = valid_loss_mse / len(valid_loader)
+
+            if Args.save:
+                torch.save(best_state_AE, save_EncodeDecoder)
+            print(f"{c.lm}INFO : Save learnings rates (& plot) ... {c.d}")
+
+            plt.figure(figsize=(16, 9))
+
+            # Les losses
+            plt.plot(np.arange(1, Args.epochs+1), train_list_loss_AE, c="k", ls=":", label="Train loss")
+            plt.plot(np.arange(1, Args.epochs+1), valid_list_loss_AE, c="k", label="Valid loss")
+            plt.axvline(best_state_AE["epoch"], c="g", ls="-", label=f"Best state at valid loss = {best_val_loss_AE:.3e}")
+            plt.ylabel(f"Loss {Args.loss}", color="black")
+            plt.tick_params(axis="y", labelcolor="black")
+            plt.legend()
+            plt.yscale("log")
+
+            # Lr
+            plt.twinx()
+            plt.plot(np.arange(1, Args.epochs+1), lrates, c="r")
+            plt.ylabel("Learning rates", color="red")
+            plt.tick_params(axis="y", labelcolor="red", color="r")
+            plt.yscale("log")
+
+            # final config
+            plt.xlabel("Epochs")
+            plt.title("Evolution of learning rates")
+            plt.savefig(f"{Args.output.divers_png}/{Args.train_name}_lr_AE.png")
+            plt.close()
+            print(f"{c.lm}INFO : Save of the AutoEncoder MLED at {save_EncodeDecoder}{c.d}")
 
 
 
@@ -337,7 +352,7 @@ class MLED_Model(nn.Module):
         # model, opti & scheduler
         spectrum_model = MLED_Model(autoencoder.encoder, spectrum_length=spectrum_length)
         spectrum_model = spectrum_model.to(device)
-        optimizer = torch.optim.Adam(spectrum_model.parameters(), lr=Args.lr/10.)
+        optimizer = torch.optim.Adam(spectrum_model.parameters(), lr=Args.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
         # On peut freeze l'encoder au début pour forcer à changer d'abord les poids de la partie spectrum
