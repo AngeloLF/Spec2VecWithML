@@ -47,7 +47,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     for savef in saveFolders:
 
         if savef.startswith("pred_"):
-            saveFolders_str.append("_".join(savef.split("_")[1:3]))
+            saveFolders_str.append("_".join(savef.split("_")[1:3] + [savef.split("_")[4]]))
         else:
             saveFolders_str.append(savef)
 
@@ -89,7 +89,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     for i, t in enumerate(targets):
 
         save_txt += f"\n{t}\n"
-        print(f"\n{t}")
+        print(f"\n{c.m}For {t}{c.d}")
 
         true_vals = getTrueValues(hp, vp, t)
         if t in ["ozone", "vaod", "pwv"]:
@@ -108,14 +108,6 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
             for i, savef in enumerate(saveFolders):
 
-                # color
-                if savef == "true":
-                    color = "k"
-                elif i < len(colors):
-                    color = colors[i]
-                else:
-                    color = None
-
                 res = full_data[savef][t][0][true_sort]-y
                 
                 score = np.nanmean(np.sqrt(res**2))
@@ -123,40 +115,20 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                 score_mean = np.nanmean(res)
                 score_std = np.nanstd(res)
 
-                if mode == "plot":
-                    save_txt += f"{savef} : {score:.3f} +- {std:.3f} --- {score_mean:.3f} +- {score_std:.3f}\n"
-                    print(f"{savef} : {score:.3f} +- {std:.3f} --- {score_mean:.3f} +- {score_std:.3f}")
-                    scores[savef][t] = [score, std]
+                save_txt += f"{savef} : {score:.3f} +- {std:.3f} --- {score_mean:.3f} +- {score_std:.3f}\n"
+                print(f"{savef} : {score:.3f} +- {std:.3f} --- {score_mean:.3f} +- {score_std:.3f}")
+                scores[savef][t] = [score, std]
 
-                if mode != "full":
-                    if mode == "subplot" : plt.subplot(2, 2, i+1)
-                    plt.errorbar(x, res, yerr=full_data[savef][t][1][true_sort], color=color, ls="", marker=".", label=f"{savef} : {score:.3f}")
-                    plt.plot()
-                    plt.xlabel(t)
-                    plt.ylabel("Residus")
-                    plt.axhline(0, color="k", ls=":", label="True value")
-                    plt.title(f"{savef} : residus abs = {score:.3f}$\\pm${std:.3f} [mean={score_mean:.3f}$\\pm${score_std:.3f}]")
-                    plt.ylim(np.nanmin(res), np.nanmax(res))
-                    if mode == "plot": 
-                        plt.savefig(f"{pathSave}/{Args.test}/{t}/{t}_{savef}.png")
-                        plt.close()
-                else:
-                    plt.plot(x, res, color=color, ls="", marker=".")
-
-            if mode == "full":
+                plt.errorbar(x, res, yerr=full_data[savef][t][1][true_sort], color="b", ls="", marker=".", label=f"{savef} : {score:.3f}")
+                plt.plot()
                 plt.xlabel(t)
                 plt.ylabel("Residus")
                 plt.axhline(0, color="k", ls=":", label="True value")
-                plt.legend()
-            
-                plt.tight_layout()
-                plt.savefig(f"{pathSave}/{Args.test}/full_{t}.png")
+                plt.title(f"{savef} : residus abs = {score:.3f}$\\pm${std:.3f} [mean={score_mean:.3f}$\\pm${score_std:.3f}]")
+                plt.ylim(np.nanmin(res), np.nanmax(res))
+                plt.savefig(f"{pathSave}/{Args.test}/{t}/{t}_{savef}.png")
                 plt.close()
 
-            elif mode == "subplot":
-                plt.tight_layout()
-                plt.savefig(f"{pathSave}/{Args.test}/subplot_{t}.png")
-                plt.close()
 
     with open(f"{pathSave}/{Args.test}/save_extraction_score.txt", "w") as f:
         f.write(save_txt)
@@ -174,6 +146,8 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         ]
 
 
+    # Resume plots
+    print(f"\n{c.m}Make resume plots{c.d}")
     for oneByOne in [False, True]:
 
         for inPC in [False, True]:
@@ -193,7 +167,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                     plt.subplot(2, 2, i+1)
 
                 plt.errorbar(x, y[argsort_y], yerr=yerr, color=colors[i], ls="", marker=".")
-                plt.xticks(x, np.array(saveFolders)[argsort_y])
+                plt.xticks(x, np.array(saveFolders_str)[argsort_y], rotation=45)
                 if inPC or t == "total":
                     plt.ylabel(f"{t} (%)")
                 else:
@@ -204,7 +178,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                     if inPC:
                         plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_INPC_.png")
                     else:
-                        plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_.png")
+                        plt.savefig(f"{pathSave}/{Args.test}/resume_{t}.png")
 
             if not oneByOne:
                 plt.tight_layout()
@@ -217,7 +191,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
 
     # make HTML
-    print(f"\nMake HTML results")
+    print(f"\n{c.m}Make HTML results{c.d}")
     saveFolders.sort()
 
     y = np.zeros((len(saveFolders), len(targets)+3)) + np.inf
