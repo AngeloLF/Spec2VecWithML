@@ -196,7 +196,6 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
     # make HTML
     print(f"\n{c.m}Make HTML results{c.d}")
-    saveFolders.sort()
 
     y = np.zeros((len(saveFolders), len(targets)+3)) + np.inf
     e = np.zeros((len(saveFolders), len(targets)+3)) + np.inf
