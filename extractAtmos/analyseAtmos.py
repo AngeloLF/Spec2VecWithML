@@ -27,7 +27,7 @@ def getTrueValues(hp, vp, label):
 
 def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos_params_fit", pathSave="./results/analyse/extratAtmos", colors=["r", "g", "b", "y", "m"]):
 
-    targets = ["vaod", "ozone", "pwv", "d_ccd"]
+    targets = ["vaod", "ozone", "pwv"]
     nums_str = np.sort([fspectrum.split("_")[1][:-4] for fspectrum in os.listdir(f"{path}/{Args.test}/spectrum")])
 
     if Args.test in os.listdir(f"{pathSave}"):
@@ -240,7 +240,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             mean, std = scores[model][target]
             y[m, t] = mean
             e[m, t] = std
-            x[m, t] = f" {mean:.2f} ± {std:.2f} "
+            x[m, t] = f" {mean:.3f} ± {std:.3f} "
 
             tot_mean.append(mean)
             tot_std.append(std)
