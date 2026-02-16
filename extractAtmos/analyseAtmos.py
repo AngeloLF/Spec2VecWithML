@@ -245,7 +245,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
     for sorting, sorting_str in [(False, ""), (True, "_sorting")]:
 
-        with open(f"{pathSave}/{Args.test}/html/extract_atmo{sorting_str}.html", "w") as f:
+        with open(f"{pathSave}/{Args.test}/html/extract_atmo{sorting_str}.html", "w", encoding="utf-8") as f:
 
             html_codes = [f"<h1>Extraction Atmosphere</h1>"]
             html_codes.append(generate_html_table(targets+["Total", "Classement (N)", "Classement (%)"], saveFolders, x, y, sorting=sorting))
