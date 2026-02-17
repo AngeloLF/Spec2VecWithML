@@ -7,14 +7,15 @@ from pathlib import Path
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import coloralf as c
-import sys
+import sys, os, shutil
 
 
+LATENT_DIM = 1024
 
 
 ### ENCODER 
 class MLED_Encoder(nn.Module):
-    def __init__(self, input_shape=(1, 128, 1024), latent_dim=512):
+    def __init__(self, latent_dim, input_shape=(1, 128, 1024)):
         super().__init__()
         
         self.conv1 = nn.Conv2d(1, 32, kernel_size=(3, 7), stride=(2, 2), padding=(1, 3))
@@ -30,7 +31,7 @@ class MLED_Encoder(nn.Module):
         self.bn4 = nn.BatchNorm2d(256)
         
         # Calculer la taille apres convolutions genre (128, 1024) -> (64, 512) -> (32, 256) -> (16, 128) -> (8, 64)
-        self.feature_size = 256 * 8 * 64
+        self.feature_size = 256 * 8 * 64 # 131k
         
         # Bottleneck
         self.fc_encode = nn.Linear(self.feature_size, latent_dim)
@@ -52,7 +53,7 @@ class MLED_Encoder(nn.Module):
 
 ### DECODER 
 class MLED_Decoder(nn.Module):
-    def __init__(self, latent_dim=512, output_shape=(1, 128, 1024)):
+    def __init__(self, latent_dim, output_shape=(1, 128, 1024)):
         super().__init__()
         
         self.feature_size = 256 * 8 * 64
@@ -87,7 +88,7 @@ class MLED_Decoder(nn.Module):
 ### Partie pour remplacer le decoder par une sortie spectrale (a ajouter avec un encoder deja entrainer)
 # Pour l'entrainement, on peut freeze la partie encoder si besoin pour les ~20 premières epochs)
 class MLED_Regspectrum(nn.Module):
-    def __init__(self, latent_dim=512, spectrum_length=800):
+    def __init__(self, latent_dim, spectrum_length):
         super().__init__()
         
         self.fc1 = nn.Linear(latent_dim, 1024)
@@ -115,9 +116,9 @@ class MLED_Regspectrum(nn.Module):
 
 ### ENCODER-DECODER:
 class MLED_EncoderDecoder(nn.Module):
-    def __init__(self, input_shape=(1, 128, 1024), latent_dim=512):
+    def __init__(self, latent_dim, input_shape=(1, 128, 1024)):
         super().__init__()
-        self.encoder = MLED_Encoder(input_shape, latent_dim)
+        self.encoder = MLED_Encoder(latent_dim, input_shape)
         self.decoder = MLED_Decoder(latent_dim, input_shape)
         
     def forward(self, x):
@@ -167,7 +168,7 @@ class MLED_Model(nn.Module):
     folder_input = "image"
     folder_output = "spectrum"
 
-    def __init__(self, encoder=None, latent_dim=512, spectrum_length=800):
+    def __init__(self, latent_dim=LATENT_DIM, spectrum_length=800, encoder=None):
         super().__init__()
         if encoder is None:
             self.encoder = MLED_Encoder(latent_dim=latent_dim)
@@ -185,12 +186,21 @@ class MLED_Model(nn.Module):
     def particular_training(self, Args, device, train_loader, valid_loader, loss_function="MSE"):
 
         # some variables ...
-        latent_dim = 512
+        latent_dim = LATENT_DIM
         spectrum_length = 800
         save_EncodeDecoder = f"{Args.output.state}/{Args.from_prefixe}{Args.train}_{Args.lr_str}_EncoderDecoder_best.pth"
         best_val_loss_AE = np.inf
         best_state_AE = None
         lrates = np.zeros(Args.epochs)
+        print(f"{c.ly}{c.tu}INFO : Latent dimension of {latent_dim}{c.d}")
+
+
+        # add a "training_evolution_AE" to stock train & valid
+        Args.output.evolution_AE = f"{Args.output.evolution}_images" # Ex. : ./results/models_output/SCaM_chi2/training_evolution_AE
+        os.makedirs(Args.output.evolution_AE, exist_ok=True)
+        Args.output.evolution_AE_here = f"{Args.output.evolution_AE}/{Args.train_name}"   # Ex. : ./results/models_output/SCaM_chi2/training_evolution_AE/train16k_1e-04
+        if Args.train_name in os.listdir(Args.output.evolution_AE) : shutil.rmtree(Args.output.evolution_AE_here)
+        os.mkdir(Args.output.evolution_AE_here)
 
 
         # Train loss
@@ -257,6 +267,11 @@ class MLED_Model(nn.Module):
                 train_list_loss_AE[epoch] = train_loss
                 train_list_loss_mse_AE[epoch] = train_loss_mse / len(train_loader)
                 scheduler.step(train_loss)
+
+                # Predict of first train
+                autoencoder.eval()
+                pred_train0 = autoencoder(Args.train0_img)[0][0][0].cpu().detach().numpy()
+                np.save(f"{Args.output.evolution_AE_here}/train_{epoch}.npy", pred_train0)
             
 
                 ### Validation
@@ -279,6 +294,11 @@ class MLED_Model(nn.Module):
                         valid_loss_mse += mse_loss(reconstruction, images)
 
                 valid_loss = valid_loss / len(valid_loader)
+
+                # Predict of first valid
+                autoencoder.eval()
+                pred_valid0 = autoencoder(Args.valid0_img)[0][0][0].cpu().detach().numpy()
+                np.save(f"{Args.output.evolution_AE_here}/valid_{epoch}.npy", pred_valid0)
 
                 # Show epoch
                 lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
@@ -350,7 +370,7 @@ class MLED_Model(nn.Module):
         valid_list_loss_mse = np.zeros(Args.epochs)
 
         # model, opti & scheduler
-        spectrum_model = MLED_Model(autoencoder.encoder, spectrum_length=spectrum_length)
+        spectrum_model = MLED_Model(encoder=autoencoder.encoder)
         spectrum_model = spectrum_model.to(device)
         optimizer = torch.optim.Adam(spectrum_model.parameters(), lr=Args.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
@@ -424,10 +444,10 @@ class MLED_Model(nn.Module):
 
             valid_loss = valid_loss / len(valid_loader)
 
-            # Predict of first train
+            # Predict of first valid
             spectrum_model.eval()
-            pred_train0 = spectrum_model(Args.valid0_img).cpu().detach().numpy()[0]
-            np.save(f"{Args.output.evolution_here}/valid_{epoch}.npy", pred_train0)
+            pred_valid0 = spectrum_model(Args.valid0_img).cpu().detach().numpy()[0]
+            np.save(f"{Args.output.evolution_here}/valid_{epoch}.npy", pred_valid0)
 
             # Show epoch
             lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']

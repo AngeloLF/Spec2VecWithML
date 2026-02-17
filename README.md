@@ -1,5 +1,5 @@
 # Spec2VecWithML
-Machine Learning Project, mixing 4 old repositories : 
+Machine Learning Project, mixing old repositories in one projects: 
   * `specSimulator` : capable to create simulate pairs of Spectrum / Spectrogram for multiple observatory and multiple parameters
     * *Old repository* : https://github.com/AngeloLF/SpecSimulator
   * `models` : containt some ML models (CNNs, ViTs, AE ...) to predict a spectrum from a spectrogram

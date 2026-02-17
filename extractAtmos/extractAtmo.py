@@ -152,6 +152,10 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
 
         else:
 
+            spec.header["D2CCD"] = hp["DISTANCE2CCD"]
+            spec.header["PIXSHIFT"] = 0.0
+            print(f"Change d2ccd and set PIXSHIFT at 0")
+
             printdebug(f"Go SpectrumFitWorkspace...", debug)
             w = SpectrumFitWorkspace(spec, atmgrid_file_name="", verbose=debug, plot=debug, live_fit=False, fit_angstrom_exponent=True)
             printdebug(f"End of SpectrumFitWorkspace", debug)

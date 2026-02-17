@@ -43,7 +43,8 @@ if __name__ == "__main__":
 
 
 
-    ##
+
+    ### Evolution of spectrum in train and valid
     time = 10.0
     if "zoom" in sys.argv:
         nb_frame = int(nb_epochs / 10)
@@ -90,6 +91,16 @@ if __name__ == "__main__":
     ani.save(f"./results/models_output/{Args.model}_{Args.loss}/divers_png/{Args.fulltrain_str}_{Args.lr_str}{suffixe}.gif", fps=fps, dpi=300)
     plt.close()
     pbar.close()
+
+
+
+
+    ### Evolution in images in train and valid (if needed)
+    if "training_evolution_images" in os.listdir(f"./results/models_output/{Args.model}_{Args.loss}"):
+
+        # to make
+        pass
+
 
 
 
