@@ -356,8 +356,8 @@ class MLED_Model(nn.Module):
 
         ### TRAIN partie encoder-spectrum
         print(f"{c.y}Beginning to train encoder-spectrum (2/2){c.d}")
-        best_val_loss_AE = np.inf
-        best_state_AE = None
+        best_val_loss = np.inf
+        best_state = None
         lrates = np.zeros(Args.epochs)
 
         # Train loss
@@ -455,10 +455,10 @@ class MLED_Model(nn.Module):
             with open(f"{Args.output.epoch_here}/INFO - epoch {epoch+1} - {Args.epochs} - {train_loss:.6f} , {valid_loss:.6f}", "wb") as f : pass
 
             # save state at each epoch to be able to reload and continue the optimization
-            if valid_loss < best_val_loss_AE:
+            if valid_loss < best_val_loss:
 
                 best_val_loss = valid_loss
-                best_state = {"epoch": epoch + 1, "model_state_dict": autoencoder.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss}
+                best_state = {"epoch": epoch + 1, "model_state_dict": spectrum_model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss}
 
             # save loss
             valid_list_loss[epoch] = valid_loss

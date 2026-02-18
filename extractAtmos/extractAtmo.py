@@ -40,7 +40,7 @@ def showHeader(header):
 
 
 
-def recupAtmosFromParams(w, file_json, wanted_labels=["vaod", "ozone", "pwv", "d_ccd"]):
+def recupAtmosFromParams(w, file_json, wanted_labels=["a1", "vaod", "ozone", "pwv", "d_ccd", "angstrom_exp", "reso", "alpha_pix"]):
 
     data = dict()
 

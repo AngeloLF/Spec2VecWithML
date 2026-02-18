@@ -98,8 +98,10 @@ if __name__ == "__main__":
     ### Evolution in images in train and valid (if needed)
     if "training_evolution_images" in os.listdir(f"./results/models_output/{Args.model}_{Args.loss}"):
 
-        # to make
-        pass
+        fig, ax = plt.subplots(4, 2)
+
+        
+        
 
 
 

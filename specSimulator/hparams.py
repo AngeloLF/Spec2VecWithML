@@ -310,7 +310,7 @@ class Hparams():
         "ATM_OZONE" : 300.0, # 250 et 350
         "ATM_PWV" : 5.0, # 0.0 et 15.0
         "ATM_AIRMASS" : 1.2, # 1.0 et 2.5
-        "ATM_ANGSTROM_EXPONENT" : 1.2,
+        "ATM_ANGSTROM_EXPONENT" : 1.2, # can be 0.5 to 3.0
         "ATM_TEMPERATURE" : 8.6,
         "ATM_HUMIDITY" : 25,
 

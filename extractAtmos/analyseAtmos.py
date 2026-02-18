@@ -15,12 +15,14 @@ from recup_score import generate_html_table
 
 
 
+
 def getTrueValues(hp, vp, label):
 
     if label == "vaod" : return vp["ATM_AEROSOLS"]
     elif label == "ozone" : return vp["ATM_OZONE"]
     elif label == "pwv" : return vp["ATM_PWV"]
     elif label == "d_ccd" : return hp["DISTANCE2CCD"]
+    elif label == "angstrom_exp" : return hp["ATM_ANGSTROM_EXPONENT"]
     else : raise Exception(f"In [extractAtmo.py/getTrueValues] : label {label} unknow")
 
 
@@ -110,22 +112,22 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
                 res = full_data[savef][t][0][true_sort]-y
                 
-                score = np.nanmean(np.sqrt(res**2))
-                std = np.nanstd(np.sqrt(res**2))
-                score_mean = np.nanmean(res)
-                score_std = np.nanstd(res)
+                RMS = np.sqrt(np.nanmean(res**2))
+                MEAN = np.nanmean(res)
+                STD = np.nanstd(res)
 
-                save_txt += f"{savef} : {score:.3f} +- {std:.3f} --- {score_mean:.3f} +- {score_std:.3f}\n"
-                print(f"{savef} : {score:.3f} +- {std:.3f} --- {score_mean:.3f} +- {score_std:.3f}")
-                scores[savef][t] = [score, std]
+                title = f"{savef} : MEAN={MEAN:.3f} RMS={RMS:.3f} STD={STD:.3f}"
+                save_txt += f"{title}\n"
+                print(title)
+                scores[savef][t] = [MEAN, RMS]
 
                 plt.errorbar(x, res, yerr=full_data[savef][t][1][true_sort], color="b", ls="", marker=".", label=f"{savef} : {score:.3f}")
                 plt.plot()
                 plt.xlabel(t)
                 plt.ylabel("Residus")
                 plt.axhline(0, color="k", ls=":", label="True value")
-                plt.title(f"{savef} : residus abs = {score:.3f}$\\pm${std:.3f} [mean={score_mean:.3f}$\\pm${score_std:.3f}]")
-                plt.ylim(np.nanmin(res), np.nanmax(res))
+                plt.title(title)
+                # plt.ylim(np.nanmin(res), np.nanmax(res))
                 plt.savefig(f"{pathSave}/{Args.test}/{t}/{t}_{savef}.png")
                 plt.close()
 
@@ -148,48 +150,32 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
     # Resume plots
     print(f"\n{c.m}Make resume plots{c.d}")
-    for oneByOne in [False, True]:
 
-        for inPC in [False, True]:
+    for inPC in [False, True]:
 
-            if not oneByOne:
-                plt.figure(figsize=(16, 9))
+        for i, (t, borne) in enumerate(zip(["pwv", "vaod", "ozone", "total"], [borne_PWV, borne_VAOD, borne_OZONE, None])):
 
-            for i, (t, borne) in enumerate(zip(["pwv", "vaod", "ozone", "total"], [borne_PWV, borne_VAOD, borne_OZONE, None])):
+            plt.figure(figsize=(16, 9))
 
-                if oneByOne:
-                    plt.figure(figsize=(16, 9))
+            x = np.arange(len(saveFolders))
+            divide = (borne[1] - borne[0])/100. if inPC and borne is not None else 1.0
+            y = np.array([scores[savef][t][0] / divide for savef in saveFolders])
+            yerr = [scores[savef][t][1] / divide for savef in saveFolders]
 
-                x = np.arange(len(saveFolders))
-                divide = (borne[1] - borne[0])/100. if inPC and borne is not None else 1.0
-                y = np.array([scores[savef][t][0] / divide for savef in saveFolders])
-                yerr = [scores[savef][t][1] / divide for savef in saveFolders]
+            argsort_y = np.argsort(y)
 
-                argsort_y = np.argsort(y)
+            plt.errorbar(x, y[argsort_y], yerr=yerr, color=colors[i], ls="", marker=".")
+            plt.xticks(x, np.array(saveFolders_str)[argsort_y], rotation=45)
+            if inPC or t == "total":
+                plt.ylabel(f"{t} (%)")
+            else:
+                plt.ylabel(f"{t}")
 
-                if not oneByOne:
-                    plt.subplot(2, 2, i+1)
-
-                plt.errorbar(x, y[argsort_y], yerr=yerr, color=colors[i], ls="", marker=".")
-                plt.xticks(x, np.array(saveFolders_str)[argsort_y], rotation=45)
-                if inPC or t == "total":
-                    plt.ylabel(f"{t} (%)")
-                else:
-                    plt.ylabel(f"{t}")
-
-                if oneByOne:
-                    plt.tight_layout()
-                    if inPC:
-                        plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_INPC_.png")
-                    else:
-                        plt.savefig(f"{pathSave}/{Args.test}/resume_{t}.png")
-
-            if not oneByOne:
-                plt.tight_layout()
-                if inPC:
-                    plt.savefig(f"{pathSave}/{Args.test}/resume_all_INPC.png")
-                else:
-                    plt.savefig(f"{pathSave}/{Args.test}/resume_all.png")
+            plt.tight_layout()
+            if inPC:
+                plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_INPC_.png")
+            else:
+                plt.savefig(f"{pathSave}/{Args.test}/resume_{t}.png")
 
 
 
