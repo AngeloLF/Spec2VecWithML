@@ -169,10 +169,15 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             print(f"Info [extractAtmos.py] : DATE-OBS not given")
 
         printdebug(f"Go run_spectrum_minimisation...", debug)
-        run_spectrum_minimisation(w, method="newton", with_line_search=False)
+        try:
+            run_spectrum_minimisation(w, method="newton", with_line_search=False)
+            recupAtmosFromParams(w, file_json)
+        except Exception as e:
+            print(f"{c.r}WARNING : run_spectrum_minimisation exception for {Args.test}/{predFolder}/spectrum_{num_str}.npy ...{c.d}")
+            print(f"{c.r}{e}{c.d}")
         printdebug(f"End of run_spectrum_minimisation", debug)
 
-        recupAtmosFromParams(w, file_json)
+
     else:
         print(f"Info [extractAtmos.py] : fits {path}/{Args.test}/spectrum_fits/images_{num_str}_spectrum.fits not exist [skip this one]")
 

@@ -121,7 +121,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                 print(title)
                 scores[savef][t] = [MEAN, RMS]
 
-                plt.errorbar(x, res, yerr=full_data[savef][t][1][true_sort], color="b", ls="", marker=".", label=f"{savef} : {score:.3f}")
+                plt.errorbar(x, res, yerr=full_data[savef][t][1][true_sort], color="b", ls="", marker=".")
                 plt.plot()
                 plt.xlabel(t)
                 plt.ylabel("Residus")
