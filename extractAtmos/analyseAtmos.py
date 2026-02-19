@@ -162,7 +162,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             y = np.array([scores[savef][t][0] / divide for savef in saveFolders])
             yerr = [scores[savef][t][1] / divide for savef in saveFolders]
 
-            argsort_y = np.argsort(y)
+            argsort_y = np.argsort(np.abs(y))
 
             plt.errorbar(x, y[argsort_y], yerr=yerr, color=colors[i], ls="", marker=".")
             plt.xticks(x, np.array(saveFolders_str)[argsort_y], rotation=45)
