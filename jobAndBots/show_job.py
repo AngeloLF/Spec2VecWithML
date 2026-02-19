@@ -243,6 +243,16 @@ def inspect_extract(params, debug):
 	model, loss, train, lr = params['model'], params['loss'], params['train'], f"{float(params['lr']):.0e}"
 	pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
 
+	if "load" in params.keys() and params["load"] != "None":
+
+		pre_train, pre_lr = params['load'].split('_')
+		pre_LR = f"{float(pre_lr):.0e}"
+		load_name = f"{pre_train}_{pre_LR}_"
+
+	else:
+
+		load_name = ""
+
 	if model == "true":
 		pred_folder = "true"
 	elif model == "spectractorfile":
