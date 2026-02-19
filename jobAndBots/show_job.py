@@ -241,7 +241,6 @@ def inspect_apply_spectractor(params, debug):
 def inspect_extract(params, debug):
 
 	model, loss, train, lr = params['model'], params['loss'], params['train'], f"{float(params['lr']):.0e}"
-	pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
 
 	if "load" in params.keys() and params["load"] != "None":
 
@@ -252,6 +251,8 @@ def inspect_extract(params, debug):
 	else:
 
 		load_name = ""
+
+	pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
 
 	if model == "true":
 		pred_folder = "true"
