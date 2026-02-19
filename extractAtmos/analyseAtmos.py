@@ -113,7 +113,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                 res = full_data[savef][t][0][true_sort]-y
                 
                 RMS = np.sqrt(np.nanmean(res**2))
-                MEAN = np.nanmean(res)
+                MEAN = np.abs(np.nanmean(res))
                 STD = np.nanstd(res)
 
                 title = f"{savef} : MEAN={MEAN:.3f} RMS={RMS:.3f} STD={STD:.3f}"
@@ -164,12 +164,13 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
             argsort_y = np.argsort(np.abs(y))
 
+            plt.axhline(0, color="k", ls=":")
             plt.errorbar(x, y[argsort_y], yerr=yerr, color=colors[i], ls="", marker=".")
             plt.xticks(x, np.array(saveFolders_str)[argsort_y], rotation=45)
             if inPC or t == "total":
-                plt.ylabel(f"{t} (%)")
+                plt.ylabel(f"Residus {t} (%)")
             else:
-                plt.ylabel(f"{t}")
+                plt.ylabel(f"Residus {t}")
 
             plt.tight_layout()
             if inPC:

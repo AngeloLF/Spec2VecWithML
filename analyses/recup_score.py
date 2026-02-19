@@ -34,12 +34,15 @@ def recup_mt(scores, mode="dispo"):
 
 
 
-def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', savefig_name=None, markers=None, colors=None):
+def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', savefig_name=None, markers=None, colors=None, absSorting=False):
 
 
     if sorting:
 
-        index = np.argsort(y[:, -3])
+        if not absSorting:
+            index = np.argsort(y[:, -3])
+        else:
+            index = np.argsort(np.abs(y[:, -3]))
 
         y = y[index]
         text = text[index]
