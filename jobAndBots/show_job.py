@@ -60,6 +60,9 @@ def extraction(sh, debug):
 				elif "apply_spectractor" in line:
 					printdebug(f"enter in apply_spectractor ...", debug)
 					return inspect_apply_spectractor(params, debug)
+				elif "extractAtmo.py" in line:
+					printdebug(f"enter in extractAtmo ...", debug)
+					return inspect_extract(params, debug)
 				else:
 					printdebug(f"Unknow python ...", debug)
 
