@@ -235,8 +235,55 @@ def inspect_apply_spectractor(params, debug):
 	return rl, ra, "2-apply_spectractor"
 
 
+def inspect_extract(params, debug):
+
+	model, loss, train, lr = params['model'], params['loss'], params['train'], f"{float(params['lr']):.0e}"
+	pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
+
+	if model == "true":
+		pred_folder = "true"
+	elif model == "spectractorfile":
+		pred_folder = "Spectractor" 
 
 
+	test = params['test']
+	a, d = params["range"].split("_")
+	a, z = int(a), int(a)+int(d)
+	nb_make = 0
+	to_make = z - a
+
+	printdebug(f"Extract on {pred_folder} ...", debug)
+	printdebug(f"Range : {a} to {z} (to_make={to_make})", debug)
+
+	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
+	nb_len = len(str(nb_tot))
+
+	if pred_folder in os.listdir(f"./results/output_simu/{test}/atmos_params_fit"):
+
+		for i in range(a, z):
+
+			printdebug(f"Search spectrum_{i:0>{nb_len}} ...", debug)
+
+			if f"atmos_params_{i:0>{nb_len}}_spectrum.json" in os.listdir(f"./results/output_simu/{test}/atmos_params_fit/{pred_folder}"):
+				nb_make += 1
+				printdebug(f"Find", debug)
+			else:
+				printdebug(f"Not find ...", debug)
+
+		color = get_color(nb_make, to_make)
+		lmax = len(str(to_make))
+
+		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:.2f} %]"
+
+		rl = f"Apply spectractor > {test} RANGE {a} to {z} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
+		ra = nb_make/to_make*100
+
+	else:
+
+		rl = f"Apply spectractor > {test} RANGE {a} to {z} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
+		ra = -1
+
+	return rl, ra, "2-apply_spectractor"
 
 
 
