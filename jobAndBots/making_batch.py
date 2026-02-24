@@ -389,7 +389,7 @@ if __name__ in "__main__":
                 psf_i = "moffat2d_na"
 
             elif type_i.lower() == "testgaussna":
-                filename = f"test{str_n}GUASSIANNA{tel_i}"
+                filename = f"test{str_n}GAUSSIANNA{tel_i}"
                 psf_i = "gaussian2d_na"
 
             else:
@@ -518,7 +518,7 @@ if __name__ in "__main__":
 
                                         if str_test == "x":
                                             test = f"test1k{tel}"
-                                        elif str_test in ["ext", "ot", "gaussian"]:
+                                        elif str_test in ["ext", "ot", "gaussian", "gaussianna", "na"]:
                                             test = f"test1k{str_test.upper()}{tel}"
                                         else:
                                             test = f"test{str_test.upper()}{tel}"
