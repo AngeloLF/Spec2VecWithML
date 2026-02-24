@@ -384,6 +384,14 @@ if __name__ in "__main__":
                 filename = f"test{str_n}GAUSSIAN{tel_i}"
                 psf_i = "gaussian2d"
 
+            elif type_i.lower() == "testna":
+                filename = f"test{str_n}NA{tel_i}"
+                psf_i = "moffat2dna"
+
+            elif type_i.lower() == "testgaussna":
+                filename = f"test{str_n}GUASSIANNA{tel_i}"
+                psf_i = "gaussian2dna"
+
             else:
                 raise Exception(f"Type {type_i.lower()} unknow")
 
