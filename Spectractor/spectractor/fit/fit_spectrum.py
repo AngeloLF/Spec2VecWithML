@@ -76,7 +76,7 @@ class SpectrumFitWorkspace(FitWorkspace):
 
         p = np.array([1, 0, 0.05, 1.2, 400, 5, 1, self.spectrum.header['D2CCD'], self.spectrum.header['PIXSHIFT'], 0])
         fixed = [False] * p.size
-        fixed[0] = False  # A1 
+        fixed[0] = False  # A1  
         fixed[1] = "A2_T" not in self.spectrum.header  # fit A2 only on sims to evaluate extraction biases
         fixed[5] = False
         fixed[7] = False # DCCD
