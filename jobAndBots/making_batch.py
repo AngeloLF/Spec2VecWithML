@@ -386,11 +386,11 @@ if __name__ in "__main__":
 
             elif type_i.lower() == "testna":
                 filename = f"test{str_n}NA{tel_i}"
-                psf_i = "moffat2dna"
+                psf_i = "moffat2d_na"
 
             elif type_i.lower() == "testgaussna":
                 filename = f"test{str_n}GUASSIANNA{tel_i}"
-                psf_i = "gaussian2dna"
+                psf_i = "gaussian2d_na"
 
             else:
                 raise Exception(f"Type {type_i.lower()} unknow")
