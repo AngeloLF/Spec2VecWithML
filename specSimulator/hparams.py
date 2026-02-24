@@ -339,8 +339,8 @@ class Hparams():
         "moffat2d_na" : {
             'f' : pf.moffat2dNA_jit, # f : def func of (XX, YY, amplitude, x, y, f_argv[0](l, *argv[0]), ..., f_argv[n](l, *argv[n])), for l lambdas in nm
             'f_arg' : [pf.simpleLinear, pf.simpleLinear, pf.simpleLinear], # function for argument
-            'arg' : [[3.0], [3.0], [4.0]], # argument for argument function
-            'order0' : {'amplitude':22900.0, 'arg':[3.0, 2.0, 4.0]}, # argument order 0
+            'arg' : [[3.0], [3.0], [2.0]], # argument for argument function
+            'order0' : {'amplitude':22900.0, 'arg':[3.0, 2.0, 2.0]}, # argument order 0
             'timbre' : pf.moffat2dNA_timbre, # timbre size function
         },
 
