@@ -56,7 +56,7 @@ class Hparams():
                 'HD200654', 'HD205905', 'HD209458',  'HD37962',  'HD38949',
                 'calib'],
 
-        "setCalib" : ["calib"],
+        "setcalib" : ["calib"],
 
         # set0 + calPX
         "set0calPX" : ['HD009051', 'HD031128', 'HD101452', 'HD106252', 'HD111980', 
@@ -65,10 +65,10 @@ class Hparams():
                 'HD200654', 'HD205905', 'HD209458',  'HD37962',  'HD38949',
                 'calPX'],
 
-        "setCalPX" : ["calPX"],
+        "setcalpx" : ["calPX"],
 
         # setAll
-        "setAll" : ['HD009051', 'HD031128', 'HD101452', 'HD106252', 'HD111980', 
+        "setall" : ['HD009051', 'HD031128', 'HD101452', 'HD106252', 'HD111980', 
                 'HD115169', 'HD142331', 'HD14943',  'HD158485', 'HD159222', 
                 'HD160617', 'HD163466', 'HD165459', 'HD167060', 'HD185975', 
                 'HD200654', 'HD205905', 'HD209458', 'HD37962',  'HD38949',
@@ -334,6 +334,7 @@ class Hparams():
             'arg' : [[3.0], [3.0]], # argument for argument function
             'order0' : {'amplitude':22900.0, 'arg':[3.0, 2.0]}, # argument order 0
             'timbre' : pf.moffat2d_timbre, # timbre size function
+            'need_order' : False,
         },
 
         "moffat2d_na" : {
@@ -342,6 +343,7 @@ class Hparams():
             'arg' : [[3.0], [3.0], [2.0]], # argument for argument function
             'order0' : {'amplitude':22900.0, 'arg':[3.0, 2.0, 2.0]}, # argument order 0
             'timbre' : pf.moffat2dNA_timbre, # timbre size function
+            'need_order' : False,
         },
 
         "gaussian2d" : {
@@ -350,6 +352,7 @@ class Hparams():
             'arg' : [[3.0]], # argument for argument function
             'order0' : {'amplitude':22900.0, 'arg':[3.0]}, # argument order 0
             'timbre' : pf.gaussian2d_timbre, # timbre size function
+            'need_order' : False,
         },
 
         "gaussian2d_na" : {
@@ -358,6 +361,16 @@ class Hparams():
             'arg' : [[3.0], [2.0]], # argument for argument function
             'order0' : {'amplitude':22900.0, 'arg':[3.0, 2.0]}, # argument order 0
             'timbre' : pf.gaussian2dNA_timbre, # timbre size function
+            'need_order' : False,
+        },
+
+        "stardice" : {
+            'f' : pf.get_stardice_psf(),
+            'f_arg' : [pf.simpleX],
+            'arg' : [[0.]],
+            'order0' : {'amplitude':22900.0, 'arg':[-1.]},
+            'timbre' : pf.stardice_timbre,
+            'need_order' : True,
         }
     }
 

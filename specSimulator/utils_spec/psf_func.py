@@ -2,11 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
 from time import time
+import coloralf as c
+from scipy.interpolate import RegularGridInterpolator
+import sys
+
 
 
 def simpleLinear(x, a):
 
     return a
+
+def simpleX(x, a):
+
+    return x
 
 
 
@@ -100,6 +108,107 @@ def gaussian2dNA_jit(x, y, amplitude, x_c, y_c, std, desaligned):
 
 
 
+
+
+### For STARDICE PSF
+
+def stardice_timbre(lambdas):
+
+    return 24
+
+def make_interpolator(x, y, z, method='linear'):
+    
+    interp = RegularGridInterpolator((x, y), z.T, method=method, bounds_error=False, fill_value=0.0)
+    
+    def interpolate(xi, yi):
+        xi, yi = np.asarray(xi), np.asarray(yi)
+        shape = np.broadcast_shapes(xi.shape, yi.shape)
+        points = np.column_stack([xi.ravel(), yi.ravel()])
+        return interp(points).reshape(shape)
+    
+    return interpolate
+
+
+def get_stardice_psf(files=["stardice_psf_cube_300-1100_order1_theo.npy", "stardice_psf_cube_300-1100_order2_theo.npy"], theta0=199.236):
+
+    # for order 1
+    w = np.arange(300, 1100, 1)
+    m_order1 = np.load(f"specSimulator/datafile/psfs/{files[0]}")
+    mfunc_order1 = list()
+
+    for wi, mi in zip(w, m_order1):
+
+        x = np.arange(0, mi.shape[1]) - mi.shape[1] / 2
+        y = np.arange(0, mi.shape[0]) - mi.shape[0] / 2
+
+        mfunc_order1.append(make_interpolator(x, y, mi))
+
+    # for order 2
+    w = np.arange(300, 1100, 1)
+    m_order2 = np.load(f"specSimulator/datafile/psfs/{files[1]}")
+    mfunc_order2 = list()
+
+    for wi, mi in zip(w, m_order2):
+
+        x = np.arange(0, mi.shape[1]) - mi.shape[1] / 2
+        y = np.arange(0, mi.shape[0]) - mi.shape[0] / 2
+
+        mfunc_order2.append(make_interpolator(x, y, mi))
+
+    mfunc = [None, mfunc_order1, mfunc_order2]
+
+    if "debug-psf" in sys.argv:
+
+        theta0 = 199.236 / 180 * np.pi
+        angle_voulu = 0.
+
+        dtheta = theta0 - angle_voulu
+
+
+        xt = np.linspace(-24, 24, 500)
+        yt = np.linspace(-24, 24, 500)
+        xxt, yyt = np.meshgrid(xt, yt)
+
+        nxxt = xxt*np.cos(dtheta) - yyt*np.sin(dtheta)
+        nyyt = xxt*np.sin(dtheta) + yyt*np.cos(dtheta)
+
+        zt = mfunc_order1[800-300](xxt, yyt)
+        nzt = mfunc_order1[800-300](nxxt, nyyt)
+
+        plt.figure(figsize=(18, 6))
+
+        plt.subplot(131)
+        plt.imshow(np.log10(m_order1[800-300]+1), cmap="gray", origin="lower")
+
+        plt.subplot(132)
+        plt.imshow(np.log10(zt+1), cmap="gray", origin="lower")
+
+        plt.subplot(133)
+        plt.imshow(np.log10(nzt+1), cmap="gray", origin="lower")
+        plt.show()
+
+
+    def stardice_psf(order, angle, x, y, amplitude, x_c, y_c, lambdas):
+
+        if order == 0:
+
+            return moffat2d_jit(x, y, amplitude, x_c, y_c, 3.0, 2.0)
+        
+        elif lambdas < 300 or lambdas >= 1100:
+            if "debug" in sys.argv:
+                print(f"Full zeros because lambdas < 300 or lambdas >= 1100")
+            return np.zeros_like(x)
+        else:
+
+            dtheta = theta0/180*np.pi - angle/180*np.pi
+            x_rot = (x-x_c)*np.cos(dtheta) - (y-y_c)*np.sin(dtheta)
+            y_rot = (x-x_c)*np.sin(dtheta) + (y-y_c)*np.cos(dtheta)
+
+            if "debug" in sys.argv and lambdas >= 600:
+                print(f"Sum of stardice psf at lambdas={lambdas} : {np.sum(mfunc[order][lambdas-300](x_rot, y_rot) * amplitude)}")
+            return mfunc[order][lambdas-300](x_rot, y_rot) * amplitude
+
+    return stardice_psf
 
 
 ### For test function:

@@ -211,15 +211,24 @@ class MyDisperser():
             print(f"{c.y}WARNING : when load disperser, ratio_order_2over1 containt negative values -> cut to 0{c.d}")
             t[t < 0] = 0
 
-        self.ratio_order_2over1 = interpolate.interp1d(l, t, bounds_error=False, kind="linear", fill_value="extrapolate")
+        self.ratio_order_2over1 = interpolate.interp1d(l, t, bounds_error=False, kind="linear", fill_value=0)
+
+        if "debug-disperser" in sys.argv:
+            plt.plot(l, t, ".r")
+            plt.xlabel("lambdas")
+            plt.ylabel("transmission")
+            plt.title("ratio_order_2over1")
+            plt.axvline(300, c="k", ls=":")
+            plt.axvline(1100, c="k", ls=":")
+            plt.show()
 
         filename = f"{self.hp.DISPERSER_DIR}/{self.hp.DISPERSER}/ratio_order_3over2.txt"
         if os.path.isfile(filename):
             a = np.loadtxt(filename)
             if a.T.shape[0] == 2 : l, t = a.T
             else : l, t, e = a.T
-            self.ratio_order_3over2 = interpolate.interp1d(l, t, bounds_error=False, kind="linear", fill_value="extrapolate")
-            self.ratio_order_3over1 = interpolate.interp1d(l, self.ratio_order_3over2(l)*self.ratio_order_2over1(l), bounds_error=False, kind="linear", fill_value="extrapolate")
+            self.ratio_order_3over2 = interpolate.interp1d(l, t, bounds_error=False, kind="linear", fill_value=0)
+            self.ratio_order_3over1 = interpolate.interp1d(l, self.ratio_order_3over2(l)*self.ratio_order_2over1(l), bounds_error=False, kind="linear", fill_value=0)
         else:
             self.ratio_order_3over2 = None
             self.ratio_order_3over1 = None     

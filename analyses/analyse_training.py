@@ -118,24 +118,24 @@ if __name__ == "__main__":
         fps = nb_frame / time
         x = np.arange(300, 1100)
 
-        fig, ax = plt.subplots(4, 2)
+        fig, ax = plt.subplots(4, 1)
 
         pred_train_image = np.load(f"{folder_evolution_image}/train_0.npy")
         train_residus = true_train_image - pred_train_image
         train_chi2eq = train_residus**2 / (sigma_READ**2 + true_train_image / gain) * np.sign(train_residus)
 
-        ax_train_true = ax[0, 0].imshow(np.log10(true_train_image+1), cmap='gray')
-        ax_train_pred = ax[1, 0].imshow(np.log10(pred_train_image+1), cmap='gray')
+        ax_train_true = ax[0].imshow(np.log10(true_train_image+1), cmap='gray')
+        ax_train_pred = ax[1].imshow(np.log10(pred_train_image+1), cmap='gray')
         vmax = max(np.abs(np.min(train_residus)), np.max(train_residus))
-        ax_train_resi = ax[2, 0].imshow(train_residus, cmap='bwr', vmin=-vmax/2, vmax=vmax/2)
+        ax_train_resi = ax[2].imshow(train_residus, cmap='bwr', vmin=-vmax/2, vmax=vmax/2)
         vmax = max(np.abs(np.min(train_chi2eq)), np.max(train_chi2eq))
-        ax_train_chi2 = ax[3, 0].imshow(train_chi2eq, cmap='bwr', vmin=-vmax/2, vmax=vmax/2)
+        ax_train_chi2 = ax[3].imshow(train_chi2eq, cmap='bwr', vmin=-vmax/2, vmax=vmax/2)
 
-        ax[0, 0].set_ylabel("True")
-        ax[1, 0].set_ylabel("Pred")
-        ax[2, 0].set_ylabel("Residus")
-        ax[3, 0].set_ylabel(f"$\\chi_2$")
-        ax[0, 0].set_title(f"Evolution of {Args.model}_{Args.loss} training with {Args.fulltrain_str}_{Args.lr_str}")
+        ax[0].set_ylabel("True")
+        ax[1].set_ylabel("Pred")
+        ax[2].set_ylabel("Residus")
+        ax[3].set_ylabel(f"$\\chi_2$")
+        ax[0].set_title(f"Evolution of {Args.model}_{Args.loss} training with {Args.fulltrain_str}_{Args.lr_str}")
 
         pbar = tqdm(total=nb_frame, desc="Images evolution")
 

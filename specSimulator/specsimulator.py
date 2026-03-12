@@ -341,9 +341,29 @@ class SpecSimulator():
             allYc = np.append(allYc, Y_c)
             self.ctt.c(f"Compute dispersion & params")
 
+            if "debug" in sys.argv:
+                plt.subplot(211)
+                plt.plot(self.lambdas, tr(self.lambdas), c="r", label="tr(lambdas)")
+                plt.xlabel(f"$\\lambda$ (nm)")
+                plt.subplot(212)
+                plt.plot(self.lambdas, spectrum*A, c="g", label="Spectrum")
+                plt.plot(self.lambdas, Amp, c="k")
+                plt.xlabel(f"$\\lambda$ (nm)")
+                plt.ylabel(f"Amplitude [order {order}]")
+                plt.legend()
+                plt.show()
+
+                plt.figure(figsize=(10, 10*self.Ny/self.Nx))
+                plt.plot([0, self.Nx, self.Nx, 0, 0], [0, 0, self.Ny, self.Ny, 0], color="k", ls=":", label="CCD")
+                plt.plot(X_c, Y_c, '.k')
+                plt.title(f"Position of psfs spot [order {order}]")
+                plt.legend()
+                plt.show()
+
+
             # Building PSF
             self.ctt.o(f"Building PSF cube", rank="BlankS")
-            sdo, sdo_RGB = self.build_psf_cube(X_c, Y_c, Amp, timbre_size)
+            sdo, sdo_RGB = self.build_psf_cube(order, X_c, Y_c, Amp, timbre_size)
             spectrogram_data += sdo
             if self.colorSimu : spectrogram_data_RGB += sdo_RGB 
 
@@ -360,7 +380,10 @@ class SpecSimulator():
         # IMAGE RECOMBINAISON
         self.ctt.o(f"Image Computation", rank="Full")
         self.ctt.o(f"orders", rank="imageC")
-        psf_order_0 = self.psf_function['f'](self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
+        if not self.psf_function["need_order"]:
+            psf_order_0 = self.psf_function['f'](self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
+        else:
+            psf_order_0 = self.psf_function['f'](0, 0, self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
         data_image = spectrogram_data + psf_order_0
         if self.colorSimu : 
             data_image_RGB = spectrogram_data_RGB
@@ -458,7 +481,7 @@ class SpecSimulator():
 
 
 
-    def build_psf_cube(self, X_c, Y_c, amplitude, timbre_size, dtype="float32"):
+    def build_psf_cube(self, order, X_c, Y_c, amplitude, timbre_size, dtype="float32"):
 
         self.ctt.o(f"init cube", rank='bpc')
 
@@ -487,8 +510,23 @@ class SpecSimulator():
             self.ctt.c(f"Xpix, Ypix")
 
             self.ctt.o(f"psf_func", rank='bpc')
-            psf2add = self.psf_function['f'](timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
+            if not self.psf_function['need_order']:
+                psf2add = self.psf_function['f'](timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
+            else:
+                psf2add = self.psf_function['f'](order, self.ROTATION_ANGLE, timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
             psf_cube[ymin:ymax, xmin:xmax] += psf2add
+
+            if "debug" in sys.argv and self.lambdas[x] >= 800:
+
+                print(amplitude[x], X_c[x], Y_c[x], argf)
+
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6), gridspec_kw={'width_ratios': [1, 3]})
+                ax1.imshow(np.log10(psf2add+1), cmap="gray", origin="lower")
+                ax1.set_title(f"PSF add for lambdas = {self.lambdas[x]}")
+                ax2.imshow(np.log10(psf_cube+1), cmap="gray", origin="lower")
+                ax2.set_title(f"Full PSF")
+                plt.show()
+
             if self.colorSimu:
                 R, G, B, A = self.wavelength_to_rgb(self.lambdas[x])
                 psf_cube_RGB[ymin:ymax, xmin:xmax, 0] += R * psf2add
