@@ -209,8 +209,11 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
         ys = np.load(f"{Paths.test}/{Folds.pred_folder}/spectrum_{num_str}.npy")
         if give_norma : ys *= result["fact"]
 
-        hdul = fits.open(f"{Paths.test}/spectrum_fits/images_{num_str}_spectrum.fits")[0]
-        chi2_spectractor = hdul.header["CHI2_FIT"]
+        if f"images_{num_str}_spectrum.fits" in os.listdir(f"{Paths.test}/spectrum_fits"):
+            hdul = fits.open(f"{Paths.test}/spectrum_fits/images_{num_str}_spectrum.fits")[0]
+            chi2_spectractor = hdul.header["CHI2_FIT"]
+        else:
+            chi2_spectractor = np.nan
 
 
         yp[np.isnan(yp)] = 0.0
