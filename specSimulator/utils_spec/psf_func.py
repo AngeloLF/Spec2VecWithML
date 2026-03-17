@@ -102,9 +102,11 @@ def gaussian2dNA_timbre(std, desaligned):
 def gaussian2dNA_jit(x, y, amplitude, x_c, y_c, std, desaligned):
 
     gauss_a = gaussian2d_jit(x, y, amplitude, x_c, y_c, std)
-    gauss_na = gaussian2d_jit(x, y, amplitude, x_c+desaligned, y_c+desaligned, std)
+    gauss_na = gaussian2d_jit(x, y, amplitude, x_c+desaligned*std, y_c+desaligned*std, std)
 
     return gauss_a / 2 + gauss_na / 2
+
+
 
 
 
