@@ -137,6 +137,9 @@ def get_stardice_psf(files=["stardice_psf_cube_order1.npz", "stardice_psf_cube_o
     w = np.arange(300, 1100, 1)
     data_order1 = np.load(f"specSimulator/datafile/psfs/{files[0]}")
     m_order1 = data_order1["cube"]
+    dx_order1 = data_order1["dx"]
+    dy_order1 = data_order1["dy"]
+    theta0 = data_order1["angle"]
     mfunc_order1 = list()
 
     for wi, mi in zip(w, m_order1):
@@ -150,6 +153,8 @@ def get_stardice_psf(files=["stardice_psf_cube_order1.npz", "stardice_psf_cube_o
     w = np.arange(300, 1100, 1)
     data_order2 = np.load(f"specSimulator/datafile/psfs/{files[1]}")
     m_order2 = data_order2["cube"]
+    dx_order2 = data_order2["dx"]
+    dy_order2 = data_order2["dy"]
     mfunc_order2 = list()
 
     for wi, mi in zip(w, m_order2):
@@ -160,14 +165,15 @@ def get_stardice_psf(files=["stardice_psf_cube_order1.npz", "stardice_psf_cube_o
         mfunc_order2.append(make_interpolator(x, y, mi))
 
     mfunc = [None, mfunc_order1, mfunc_order2]
+    dx = [None, dx_order1, dx_order2]
+    dy = [None, dy_order1, dy_order2]
 
     if "debug-psf" in sys.argv:
 
-        theta0 = 199.236 / 180 * np.pi
+        theta0deg = theta0 / 180 * np.pi
         angle_voulu = 0.
 
-        dtheta = theta0 - angle_voulu
-
+        dtheta = theta0deg - angle_voulu
 
         xt = np.linspace(-24, 24, 500)
         yt = np.linspace(-24, 24, 500)
@@ -205,8 +211,8 @@ def get_stardice_psf(files=["stardice_psf_cube_order1.npz", "stardice_psf_cube_o
         else:
 
             dtheta = theta0/180*np.pi - angle/180*np.pi
-            x_rot = (x-x_c)*np.cos(dtheta) - (y-y_c)*np.sin(dtheta)
-            y_rot = (x-x_c)*np.sin(dtheta) + (y-y_c)*np.cos(dtheta)
+            x_rot = (x-x_c+dx[order][lambdas-300])*np.cos(dtheta) - (y-y_c+dy[order][lambdas-300])*np.sin(dtheta)
+            y_rot = (x-x_c+dx[order][lambdas-300])*np.sin(dtheta) + (y-y_c+dy[order][lambdas-300])*np.cos(dtheta)
 
             if "debug" in sys.argv and lambdas >= 600:
                 print(f"Sum of stardice psf at lambdas={lambdas} : {np.sum(mfunc[order][lambdas-300](x_rot, y_rot) * amplitude)}")
