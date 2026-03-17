@@ -207,8 +207,11 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
 
         # loading spectractor:
         if f"spectrum_{num_str}.npy" in os.listdir(f"{Paths.test}/pred_Spectractor_x_x_0e+00"):
-            yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-            yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
+            try:
+                yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
+                yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
+            except EOFError:
+                print(f"EOFError with {Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
         else:
             yp = np.zeros_like(yt) * np.nan
             yp_err = np.zeros_like(yt) * np.nan
