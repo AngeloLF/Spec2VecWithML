@@ -210,14 +210,14 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
             try:
                 yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
                 yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
-            except EOFError:
+            except EOFError: 
                 print(f"EOFError with {Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-                yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-                yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
+                yp = np.zeros_like(yt) * np.nan
+                yp_err = np.zeros_like(yt) * np.nan
             except OSError:
                 print(f"OSError with {Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-                yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-                yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
+                yp = np.zeros_like(yt) * np.nan
+                yp_err = np.zeros_like(yt) * np.nan
         else:
             yp = np.zeros_like(yt) * np.nan
             yp_err = np.zeros_like(yt) * np.nan
@@ -231,10 +231,10 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
                 chi2_spectractor = hdul.header["CHI2_FIT"]
             except EOFError:
                 print(f"EOFError with {Paths.test}/spectrum_fits/images_{num_str}_spectrum.fits")
-                chi2_spectractor = hdul.header["CHI2_FIT"]
+                chi2_spectractor = np.nan
             except OSError:
                 print(f"OSError with {Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-                chi2_spectractor = hdul.header["CHI2_FIT"]
+                chi2_spectractor = np.nan
         else:
             chi2_spectractor = np.nan
 
