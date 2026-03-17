@@ -531,7 +531,7 @@ if __name__ in "__main__":
 
                                         if str_test == "x":
                                             test = f"test1k{tel}"
-                                        elif str_test in ["ext", "ot", "gaussian", "gaussianna", "na"]:
+                                        elif str_test in ["ext", "ot", "gaussian", "gaussianna", "na", "stardice"]:
                                             test = f"test1k{str_test.upper()}{tel}"
                                         else:
                                             test = f"test{str_test.upper()}{tel}"
