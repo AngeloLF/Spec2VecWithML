@@ -352,12 +352,12 @@ if __name__ in "__main__":
         device = "cpu"
 
         # si on a indiquer seulement un telescope pour plusieur simu, on attribut ce telescope a tout le monde
-        if len(args.tel) == 1 and len(type_i) > 1:
-            args.tel *= len(type_i)
+        if len(args.tel) == 1 and len(args.type) > 1:
+            args.tel *= len(args.type)
 
         # pareille pour seed
-        if len(args.seed) == 1 and len(type_i) > 1:
-            args.seed *= len(type_i)
+        if len(args.seed) == 1 and len(args.type) > 1:
+            args.seed *= len(args.type)
 
 
         for n_i, type_i, tel_i, seed_i in zip(args.nsimu, args.type, args.tel, args.seed):
