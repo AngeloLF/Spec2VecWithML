@@ -26,7 +26,7 @@ Full pipeline, for create and train few models and compare to Spectractor :
 For create *train*, *valid* and some *test*.
 Need arguments:
   * `nsimu` : the size of each dataset
-  * `type` : the type of each dataset, like:
+  * `type` : the type of each dataset, like :
     * *train* : train dataset 
     * *valid* : valid dataset
     * *test* : test dataset
@@ -35,7 +35,11 @@ Need arguments:
     * *testgauss* : test with gaussian 2D PSF
     * *testna* : test with 2 moffats PSF, with one not aligned
     * *testgaussna* : test with 2 gaussians 2D PSF, with one not aligned
-  * 
+  * `tel` : telescope. Can be give individualy or once for all. Tel available :
+    * *ctio* : Cerro Tololo Inter-American Observatory, Chili
+    * *stardice* : A 40 cm telescope in OHP, France
+    * *auxtel* : The auxialiary telescope of Rubin Observatoire, Chili
+  * `seed` : seed to pick parameters
 
 ```bash
 python jobAndBots/making_batch.py simu nsimu=16384,2048,1024,1024,1024 type=train,valid,test,testext,testot seed=413 tel=auxtel

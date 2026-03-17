@@ -401,6 +401,10 @@ if __name__ in "__main__":
                 filename = f"test{str_n}GAUSSIANNA{tel_i}"
                 psf_i = "gaussian2d_na"
 
+            elif type_i.lower() == "teststardice":
+                filename = f"test{str_n}STARDICE{tel_i}"
+                psf_i = "stardice"
+
             else:
                 raise Exception(f"Type {type_i.lower()} unknow")
 
