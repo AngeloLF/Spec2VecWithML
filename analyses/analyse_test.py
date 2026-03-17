@@ -220,8 +220,11 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
         if give_norma : ys *= result["fact"]
 
         if f"images_{num_str}_spectrum.fits" in os.listdir(f"{Paths.test}/spectrum_fits"):
-            hdul = fits.open(f"{Paths.test}/spectrum_fits/images_{num_str}_spectrum.fits")[0]
-            chi2_spectractor = hdul.header["CHI2_FIT"]
+            try:
+                hdul = fits.open(f"{Paths.test}/spectrum_fits/images_{num_str}_spectrum.fits")[0]
+                chi2_spectractor = hdul.header["CHI2_FIT"]
+            except EOFError:
+                print(f"EOFError with {Paths.test}/spectrum_fits/images_{num_str}_spectrum.fits")
         else:
             chi2_spectractor = np.nan
 
