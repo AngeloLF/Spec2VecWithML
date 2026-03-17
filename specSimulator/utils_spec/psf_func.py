@@ -129,11 +129,12 @@ def make_interpolator(x, y, z, method='linear'):
     return interpolate
 
 
-def get_stardice_psf(files=["stardice_psf_cube_300-1100_order1_theo.npy", "stardice_psf_cube_300-1100_order2_theo.npy"], theta0=199.236):
+def get_stardice_psf(files=["stardice_psf_cube_order1.npz", "stardice_psf_cube_order2.npz"]):
 
     # for order 1
     w = np.arange(300, 1100, 1)
-    m_order1 = np.load(f"specSimulator/datafile/psfs/{files[0]}")
+    data_order1 = np.load(f"specSimulator/datafile/psfs/{files[0]}")
+    m_order1 = data_order1["cube"]
     mfunc_order1 = list()
 
     for wi, mi in zip(w, m_order1):
@@ -145,7 +146,8 @@ def get_stardice_psf(files=["stardice_psf_cube_300-1100_order1_theo.npy", "stard
 
     # for order 2
     w = np.arange(300, 1100, 1)
-    m_order2 = np.load(f"specSimulator/datafile/psfs/{files[1]}")
+    data_order2 = np.load(f"specSimulator/datafile/psfs/{files[1]}")
+    m_order2 = data_order2["cube"]
     mfunc_order2 = list()
 
     for wi, mi in zip(w, m_order2):

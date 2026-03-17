@@ -70,6 +70,17 @@ if "psf" in argv.keys():
         var_params["train"]["arg.0.0"] = [3.0, 8.0]
         var_params["test"]["arg.0.0"] = [2.0, 10.0]
 
+    elif argv["psf"] == "gaussian2d_na":
+        var_params["train"]["arg.0.0"] = [3.0, 8.0]
+        var_params["test"]["arg.0.0"] = [2.0, 10.0]
+
+    elif argv["psf"] == "moffat2d_na":
+        var_params["train"]["arg.0.0"] = [3.0, 8.0]
+        var_params["test"]["arg.0.0"] = [2.0, 10.0]
+
+    else:
+        pass
+
 else: # it's moffat by default
     var_params["train"]["arg.0.0"] = [3.0, 8.0]
     var_params["test"]["arg.0.0"] = [2.0, 10.0]

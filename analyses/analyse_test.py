@@ -409,12 +409,22 @@ def open_fold(args, paths, folds, nb_level=20):
 
 
     # FIGURE arg002score
-    plt.figure(figsize=(12, 8))
-    plt.plot(vp["arg.0.0"], res["fact"], color="g", linestyle="", marker=".", alpha=0.7)
-    plt.xlabel("Arg.0.0")
-    plt.ylabel(f"Norma. factor")
-    plt.savefig(f"{Paths.save}/arg002score.png")
-    plt.close()
+    try:
+        plt.figure(figsize=(12, 8))
+        plt.plot(vp["arg.0.0"], res["fact"], color="g", linestyle="", marker=".", alpha=0.7)
+        plt.xlabel("Arg.0.0")
+        plt.ylabel(f"Norma. factor")
+        plt.savefig(f"{Paths.save}/arg002score.png")
+        plt.close()
+    except Exception as e:
+        print(f"Exception : {e}")
+        print(f"WARNING INFO [in analyses.analyse_test.py] : figure with arg.0.0 failed ...")
+        plt.figure(figsize=(12, 8))
+        plt.title(f"figure with arg.0.0 failed ...")
+        plt.xlabel("Arg.0.0")
+        plt.ylabel(f"Norma. factor")
+        plt.savefig(f"{Paths.save}/arg002score.png")
+        plt.close()
 
 
 
