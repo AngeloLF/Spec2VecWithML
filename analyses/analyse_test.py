@@ -204,8 +204,15 @@ def makeOneSpec(true, pred, sim, varp, num_str, Cread, gain, give_norma, savenam
 
         xt = np.arange(300, 1100)
         yt = np.load(f"{Paths.test}/spectrum/spectrum_{num_str}.npy")
-        yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
-        yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
+
+        # loading spectractor:
+        if f"spectrum_{num_str}.npy" in os.listdir(f"{Paths.test}/pred_Spectractor_x_x_0e+00")
+            yp = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrum_{num_str}.npy")
+            yp_err = np.load(f"{Paths.test}/pred_Spectractor_x_x_0e+00/spectrumerr_{num_str}.npy")
+        else:
+            yp = np.zeros_like(yt) * np.nan
+            yp_err = np.zeros_like(yt) * np.nan
+
         ys = np.load(f"{Paths.test}/{Folds.pred_folder}/spectrum_{num_str}.npy")
         if give_norma : ys *= result["fact"]
 

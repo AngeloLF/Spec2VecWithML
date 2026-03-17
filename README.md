@@ -39,8 +39,38 @@ Need arguments:
     * *ctio* : Cerro Tololo Inter-American Observatory, Chili
     * *stardice* : A 40 cm telescope in OHP, France
     * *auxtel* : The auxialiary telescope of Rubin Observatoire, Chili
-  * `seed` : seed to pick parameters
+  * `seed` : seed to pick parameters. Can be give individualy or once for all.
 
 ```bash
 python jobAndBots/making_batch.py simu nsimu=16384,2048,1024,1024,1024 type=train,valid,test,testext,testot seed=413 tel=auxtel
 ```
+
+
+
+For train a model ... tomake
+
+```bash
+python jobAndBots/making_batch.py training model=SCaM,SotSu loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel e=500
+```
+
+
+
+For apply a model ... tomake / apply_spectractor
+
+```bash
+python jobAndBots/making_batch.py apply model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5,5e-5 tel=auxtel test=gaussianna,stardice
+python jobAndBots/making_batch.py apply_spectractor test=gaussianna tel=auxtel ncpu=100
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
