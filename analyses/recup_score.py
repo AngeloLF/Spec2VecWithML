@@ -11,6 +11,16 @@ import pandas as pd
 
 
 
+models_colors = {
+    "SCaM"    : ["#ff0000", "#ff6666"],
+    "SCaMv2"  : ["#ff007f", "#ff66b2"],
+    "SotSu"   : ["#0000ff", "#6666ff"],
+    "SotSuv2" : ["#00cccc", "#33ffff"],
+}
+
+
+
+
 def recup_mt(scores, mode="dispo"):
 
     """
@@ -32,8 +42,6 @@ def recup_mt(scores, mode="dispo"):
 
 
 
-
-
 def del_seed(text):
 
     ele = text.split(" ")
@@ -43,37 +51,90 @@ def del_seed(text):
 
 
 
-def general_plot(xtexts, y, ymin, ymax, title="<title>"):
+
+def general_plot(x, y, ymin, ymax, title="<title>", di=0.05, savefig_name=None):
 
     """
         Make a general plots with all model and Spectractor
+
+        Parameters:
+            * x [list of str] : list with models name (with seed)
+            * y [numpy.array of float] : scores of models
+            * ymin [numpy.array of float] : min scores of models
+            * ymax [numpy.array of float] : max scores of models
+            * title [str] : title of the plot
+            * savefig_name [str] : path to save. If `None`, with `plt.show()` and no saving 
     """
 
-    x_ws = list()
-    y_ws = list()
+    # x2r : r are models name WITHOUT seeds
+    x2r = dict()
 
-    # to finish ...
+    # r2s : s are list of 3 list : y, ymin, ymax for each r
+    r2s = dict()
+    r = list()
 
+    # Spectractor data
+    spectractor_scores = None
 
+    for xi, yi, ymini, ymaxi in zip(x, y, ymin, ymax):
 
-    x2i = dict()
+        if "Spectractor" in xi:
+            spectractor_scores = [yi, ymini, ymaxi]
 
+        else:
+            ri = del_seed(xi)
 
-    x_ws = [del_seed(text) for text in xtexts]
-    x_ws_unique = np.unique(x_ws)
-    x = np.arange(np.size(x_ws_unique))
+            if ri not in r2s.keys():
+                r2s[ri] = [list(), list(), list()]
+                r.append(ri)
 
-    plt.scatter(x_ws, y, color="k")
+            x2r[xi] = ri
+            r2s[ri][0].append(yi)
+            r2s[ri][1].append(ymini)
+            r2s[ri][2].append(ymaxi)
 
-    for xi, yi, ymin_i, ymax_i in zip(x_ws, y, ymin, ymax):
+    r = np.array(r)
+    s = np.array([np.mean(r2s[ri][0]) for ri in r])
+    nseed = len(r2s[r[0]][0])
+    di0 = di/2*nseed
 
-        plt.plot([xi]*2, [ymin_i, ymax_i], color="k")
+    args = np.argsort(s)
+    r = r[args]
+    s = s[args]
 
+    plt.figure(figsize=(16, 12))
 
-    plt.xticks(x, x_ws_unique, rotation=90)
+    for i, (ri, si) in enumerate(zip(r, s)):
+
+        modeli = ri.split(" ")[0]
+
+        plt.scatter(i-di0, si, color=models_colors[modeli][0])
+
+        if i == 0:
+            title += f" [best {ri} with {si:.4f}]"
+
+        for j, (yj, yminj, ymaxj) in enumerate(zip(*r2s[ri])):
+
+            plt.scatter(i-di0+di*(j+1), yj, color=models_colors[modeli][1], marker="+")
+            plt.plot([i-di0+di*(j+1)]*2, [yminj, ymaxj], color=models_colors[modeli][1])
+
+    if spectractor_scores is not None:
+
+        xs = np.arange(len(r))
+        x1 = np.ones(len(r))
+        plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
+        plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
+
+    plt.xticks(np.arange(len(r)), r, rotation=90)
     plt.title(title)
+    plt.legend()
     plt.tight_layout()
-    plt.show()
+    if savefig_name is not None:
+        plt.savefig(savefig_name)
+        plt.close()
+    else:
+        plt.show()
+
 
 
 
@@ -98,10 +159,14 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', ti
         # lignes4graph = [ligne for ligne in lignes if not ("cal" in ligne and not "wc" in ligne)]
 
         mean_scores = y[:, -3]
-        min_scores = np.min(y[:, :-3], axis=1)
-        max_scores = np.max(y[:, :-3], axis=1)
 
-        general_plot(lignes, mean_scores, min_scores, max_scores, title=title)
+        ynan = np.copy(y)
+        ynan[~np.isfinite(ynan)] = np.nan
+
+        min_scores = np.nanmin(ynan[:, :-3], axis=1)
+        max_scores = np.nanmax(ynan[:, :-3], axis=1)
+
+        general_plot(lignes, mean_scores, min_scores, max_scores, title=title, savefig_name=savefig_name)
 
 
     # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
@@ -168,10 +233,6 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', ti
     
     html += '</table>'
     return html
-
-
-
-
 
 
 
@@ -292,9 +353,11 @@ def make_score(score_type, models, tests, seed4spectractor):
                 for i, typeScore in enumerate(["classic", "norma"]):
 
                     html_codes.append(f"\n\n<h2>{typeScore}</h2>")
-                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, title=f"Stat. for {score} [{typeScore}]", savefig_name=f"{path_resume}/graph/zzz"))
+                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}.png"))
 
                 f.write('\n'.join(html_codes))
+
+
 
 
 
