@@ -114,10 +114,10 @@ python jobAndBots/making_batch.py analyse model=Spectractor loss=x lr=0e+0 train
 
 ### Produce resume analyse
 
-All analyses can be resume in single html pages with all scores. Just make :
+All analyses can be resume in single html pages with all scores, and additionnal graphs. Need to give `seed` for spectractor scores. Just make :
 
 ```bash
-python analyses/recup_score.py
+python analyses/recup_score.py 413
 ```
 
 
