@@ -411,7 +411,7 @@ if __name__ in "__main__":
             for seed_i in args.seed:
 
                 codes.append(f"{batch_codes['simu'][0]} nsimu={n_i} f={filename}-{seed_i} set={set_i} tel={tel_i} seed={seed_i} psf={psf_i} {simupi}")
-                batch_names.append(f"{batch}_{filename}")
+                batch_names.append(f"{batch}_{filename}-{seed_i}")
 
 
 
