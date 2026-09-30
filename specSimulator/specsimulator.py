@@ -19,7 +19,7 @@ from utils_spec.load_disperser import MyDisperser
 class SpecSimulator():
 
     """
-    ---
+        Class for construct simulate pairs of Spectrum / Spectrogram
     """
 
     def __init__(self, hparameters, with_adr=True, with_atmosphere=True, with_background=True, with_flat=True, with_convertADU=True,
@@ -38,6 +38,14 @@ class SpecSimulator():
         # Save hparams
         self.hp = hparameters
 
+        # with_gaia
+        if self.hp.with_gaia:
+            print(f"INFO : import gaia related package ...")
+            import utils_spec.gaiaspec as gspec
+            self.gspec = gspec
+        else:
+            if "debug" in sys.argv:
+                print(f"No gaia related import")
 
         # PSF function and output_dir for simulation results.
         self.psf_function = self.hp.psf
@@ -99,6 +107,8 @@ class SpecSimulator():
             os.mkdir(f"{self.output_dir}/{self.save_fold}/opa")
             if self.hp.telescope in ["auxtel", "auxtelqn"]:
                 os.mkdir(f"{self.output_dir}/{self.save_fold}/imageOrigin")
+            if self.hp.with_gaia:
+                os.mkdir(f"{self.output_dir}/{self.save_fold}/imageWithGaia")
         
         # Order 0 coord.
         self.R0 = self.hp.R0
@@ -154,6 +164,7 @@ class SpecSimulator():
 
 
 
+
     def set_new_disperser(self, disperser_name):
 
         self.disperser_name = disperser_name
@@ -172,26 +183,141 @@ class SpecSimulator():
     def run(self):
 
         times = list()
-        pbar = tqdm(total=self.nb_simu)
+        pbar_total = tqdm(total=self.nb_simu, desc="SpecSimulator Run")
         for i in range(self.nb_simu):
             t0 = time()
             self.ctt.newLoop()
             image, spectrum = self.makeSim(num_simu=i)
-            pbar.update(1)
+
+            if self.hp.with_gaia:
+
+                ra0, dec0, mag0, gaia0 = self.gspec.query_HD(self.TARGET)
+                flux0 = 10**(-mag0 / 2.5)
+
+                if "debug-gaia" in sys.argv:
+                    print(f"Find {self.TARGET} in Simbad at {ra0:.2f} ; {dec0:.2f} [gaia ID : {gaia0}]")
+
+                pix2deg = self.hp.CCD_PIXEL2ARCSEC / 3600
+                x, y = np.array([0, self.Nx]), np.array([0, self.Ny])
+                ra  = x * pix2deg + ra0 - self.R0[0] * pix2deg
+                dec = y * pix2deg + dec0 - self.R0[1] * pix2deg
+                dra = ra[-1] - ra[0]
+                ddec = dec[-1] - dec[0]
+
+                gaias_res = self.gspec.get_gaia_rect(ra[0]-dra/2, ra[-1], dec[0], dec[-1])
+                gaias = dict()
+
+                for g in gaias_res:
+
+                    if g.get("mag_G") < 16 and str(g.get("source_id")) != str(gaia0):
+
+                        x_c = (g.get("ra") - ra0) * 3600 / self.hp.CCD_PIXEL2ARCSEC + self.R0[0]
+                        y_c = (g.get("dec") - dec0) * 3600 / self.hp.CCD_PIXEL2ARCSEC + self.R0[1]
+
+                        gaias[int(g.get("source_id"))] = {
+                            "source_id" : g.get("source_id"),
+                            "ra" : g.get("ra"),
+                            "dec" : g.get("dec"),
+                            "x_c" : x_c,
+                            "y_c" : y_c,
+                            "mag" : g.get("mag_G")
+                        }
+
+                if "debug-gaia" in sys.argv:
+                    print(f"{c.m}Find {len(gaias)} gaias in FOV{c.d}")
+                    print(f"{c.m}Find spectrum ...{c.d}")
+
+                sids = list(gaias.keys())
+                self.gspec.get_gaia_spec(sids, sampling_nm=self.lambdas, folder_gaia=self.hp.GAIA_DIR)
+                list_of_donwloaded_gaia = os.listdir(self.hp.GAIA_DIR)
+                source_id_valid = [s for s in sids if f"{s}.npy" in list_of_donwloaded_gaia]
+                print(f"{c.m}Find {len(source_id_valid)} spectrum.{c.d}")
+
+                pbar = tqdm(total=len(gaias), desc="add stars to img ...")
+                for siv in source_id_valid:
+                                
+                    x_c = gaias[siv]["x_c"]
+                    y_c = gaias[siv]["y_c"]
+                    mag = gaias[siv]["mag"]    
+                    flux = 10**(-mag / 2.5)
+                    flux_ratio = flux0 / flux
+
+                    if not self.psf_function["need_order"]:
+                        image += self.psf_function['f'](self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A*flux_ratio, x_c, y_c, *self.psf_function['order0']['arg']).astype(np.float32)
+                    else:
+                        image += self.psf_function['f'](0, 0, self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A*flux_ratio, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
+
+                    pbar.update()
+                pbar.close()
+
+                # Add each gaia to image:
+                pbar = tqdm(total=len(source_id_valid), desc="add each gaia spectrum ...")
+                for siv in source_id_valid:
+
+                    data = np.load(f"{self.hp.GAIA_DIR}/{siv}.npy")
+
+                    fflux = data[1] * self.EXPOSURE # interp1d(wl, data[] * 1e3, kind='linear', bounds_error=False, fill_value=0.) # W/m2/nm -> 1e3 erg/s/cm2/nm
+                    tflux = self.simulate_spectrum(giveSpectrum=fflux)
+
+                    x_c = gaias[siv]["x_c"]
+                    y_c = gaias[siv]["y_c"]
+
+                    self.R0 = [x_c, y_c]
+                    image_gaia, _, _, _ = self.makeSim(i, updateParams=False, giveSpectrum=tflux, savingFolders=False, with_order0=False, with_noise=False, with_flat=False, with_background=False)
+                    self.R0 = self.hp.R0
+                    if "debug-gaia-s" in sys.argv:
+
+                        plt.figure(figsize=(16, 8))
+
+                        plt.subplot(121)
+                        plt.plot(self.lambdas, tflux, ".-k")
+
+                        plt.subplot(122)
+                        plt.imshow(np.log10(image_gaia+1), cmap="gray")
+                        plt.plot([x_c], [y_c], "+r")
+                        plt.title(f"Image with gaias {siv}")
+                        plt.colorbar()
+                        plt.show()
+
+                    image += image_gaia
+                    pbar.update()
+                pbar.close()
+
+
+                np.save(f"{self.output_dir}/{self.save_fold}/imageWithGaia/image_{i:0{self.len_simu}}.npy", image)
+
+                if "debug-gaia" in sys.argv:
+                    plt.imshow(np.log10(image+1), cmap="gray")
+                    plt.colorbar()
+                    plt.title(f"Image with gaias")
+                    plt.show()
+
+            pbar_total.update(1)
             times.append(time()-t0)
-        pbar.close()
+        pbar_total.close()
 
         self.hp.save() # self.json_save(self.historic_params, 'hist_params')
         np.savez(f"{self.output_dir}/{self.save_fold}/vparams.npz", **self.variable_params)
 
         if self.show_times:
             self.ctt.result()
-            nb_train = 50000
+            nb_train = 16384
             time_per_train = nb_train * (np.sum(times) / self.nb_simu) / 60
+            unit = "min"
+
             if self.verbose > 0: 
                 print(f"{c.lm}Result of ctTime with {self.nb_simu} loop : {np.mean(times)*1e3:.1f} ~ {np.std(times)*1e3:.1f} ms{c.d}") 
             if self.verbose > 1:
-                print(f"Time for {nb_train} pict. : {time_per_train:.1f} min with {image.shape[0] * image.shape[1] * 8 / 1024**3 * nb_train:.2f} Go")
+
+
+                if time_per_train > 60:
+                    time_per_train = time_per_train / 60
+                    unit = "hour"
+                if time_per_train > 48:
+                    time_per_train = time_per_train / 60
+                    unit = "days"
+
+                print(f"Time for {nb_train} pict. : {time_per_train:.2f} {unit} with {image.shape[0] * image.shape[1] * 8 / 1024**3 * nb_train:.2f} Go")
 
 
         # view some specs in divers/
@@ -288,7 +414,7 @@ class SpecSimulator():
                     plt.close()
 
 
-    def makeSim(self, num_simu, updateParams=True, giveSpectrum=None, with_noise=True, for_analyse=False):
+    def makeSim(self, num_simu, updateParams=True, giveSpectrum=None, with_noise=True, for_analyse=False, savingFolders=True, with_order0=True, with_flat=True, with_background=True):
 
         ### set variable params
         self.ctt.o(f"set var params", rank="Full")
@@ -341,7 +467,7 @@ class SpecSimulator():
             allYc = np.append(allYc, Y_c)
             self.ctt.c(f"Compute dispersion & params")
 
-            if "debug" in sys.argv:
+            if "debug-psf" in sys.argv:
                 plt.subplot(211)
                 plt.plot(self.lambdas, tr(self.lambdas), c="r", label="tr(lambdas)")
                 plt.xlabel(f"$\\lambda$ (nm)")
@@ -380,11 +506,31 @@ class SpecSimulator():
         # IMAGE RECOMBINAISON
         self.ctt.o(f"Image Computation", rank="Full")
         self.ctt.o(f"orders", rank="imageC")
-        if not self.psf_function["need_order"]:
-            psf_order_0 = self.psf_function['f'](self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
+        if with_order0:
+            if not self.psf_function["need_order"]:
+                psf_order_0 = self.psf_function['f'](self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
+            else:
+                psf_order_0 = self.psf_function['f'](0, 0, self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
+            data_image = spectrogram_data + psf_order_0
         else:
-            psf_order_0 = self.psf_function['f'](0, 0, self.xx, self.yy, self.psf_function['order0']['amplitude']*self.A0*self.A, *self.R0, *self.psf_function['order0']['arg']).astype(np.float32)
-        data_image = spectrogram_data + psf_order_0
+            data_image = spectrogram_data 
+            psf_order_0 = np.zeros_like(data_image)
+
+
+        if "debug-image" in sys.argv:
+
+            plt.plot()
+
+            plt.subplot(231)
+            plt.imshow(np.log10(psf_order_0+1))
+            plt.axis("off")
+            plt.title(f"Order 0 ({with_order0})")
+
+            plt.subplot(232)
+            plt.imshow(np.log10(data_image+1))
+            plt.axis("off")
+            plt.title(f"+ Spectrogram data")
+
         if self.colorSimu : 
             data_image_RGB = spectrogram_data_RGB
             norma = np.max(psf_order_0) if np.max(spectrogram_data_RGB) == 0 else np.max(spectrogram_data_RGB)
@@ -393,7 +539,7 @@ class SpecSimulator():
             data_image_RGB[:, :, 2] += psf_order_0 / np.max(psf_order_0) * norma
         self.ctt.c(f"orders")
 
-        if self.with_background:
+        if self.with_background and with_background:
             self.ctt.o(f"back", rank="imageC")
             data_image += self.BACKGROUND_LEVEL
             if self.colorSimu : 
@@ -402,7 +548,13 @@ class SpecSimulator():
                 data_image_RGB[:, :, 2] += self.BACKGROUND_LEVEL
             self.ctt.c(f"back")
 
-        if self.with_flat:
+        if "debug-image" in sys.argv:
+            plt.subplot(233)
+            plt.imshow(np.log10(data_image+1))
+            plt.axis("off")
+            plt.title(f"+ BACKGROUND {self.with_background and with_background}")
+
+        if self.with_flat and with_flat:
             self.ctt.o(f"flat", rank="imageC")
             data_image *= self.flat
             if self.colorSimu : 
@@ -411,11 +563,23 @@ class SpecSimulator():
                 data_image_RGB[:, :, 2] *= self.flat
             self.ctt.c(f"flat")
 
+        if "debug-image" in sys.argv:
+            plt.subplot(234)
+            plt.imshow(np.log10(data_image+1))
+            plt.axis("off")
+            plt.title(f"* flat ({self.with_flat and with_flat})")
+
         if self.with_convertADU:
             self.ctt.o(f"convertADU", rank="imageC")
             data_image *= self.EXPOSURE
             if self.colorSimu : data_image_RGB *= self.EXPOSURE
             self.ctt.c(f"convertADU")
+
+        if "debug-image" in sys.argv:
+            plt.subplot(235)
+            plt.imshow(np.log10(data_image+1))
+            plt.axis("off")
+            plt.title(f"* EXPOSURE")
 
         if self.with_noise and with_noise:
             self.ctt.o(f"noise", rank="imageC")
@@ -426,6 +590,14 @@ class SpecSimulator():
                 data_image_RGB[:, :, 2] = self.add_poisson_and_read_out_noise(data_image_RGB[:, :, 2])
             self.ctt.c(f"noise")
         self.ctt.c(f"Image Computation")
+
+
+        if "debug-image" in sys.argv:
+            plt.subplot(236)
+            plt.imshow(np.log10(data_image+1))
+            plt.axis("off")
+            plt.title(f"noise ({self.with_noise and with_noise})")
+            plt.show()
 
 
         if for_analyse:
@@ -441,7 +613,7 @@ class SpecSimulator():
             allXc /= 2
             allYc /= 2
 
-        if self.savingFolders:
+        if self.savingFolders and savingFolders:
         
             np.save(f"{self.output_dir}/{self.save_fold}/image/image_{num_simu:0{self.len_simu}}.npy", data_image)
             if self.colorSimu : np.save(f"{self.output_dir}/{self.save_fold}/imageRGB/imageRGB_{num_simu:0{self.len_simu}}.npy", data_image_RGB)
@@ -462,14 +634,17 @@ class SpecSimulator():
 
 
 
-    def simulate_spectrum(self):
+    def simulate_spectrum(self, giveSpectrum=None):
 
         self.ctt.o(f"load_atm", rank="sim spec")
         if self.with_atmosphere : self.atm = self.give_atm_transmission()
         self.ctt.c(f"load_atm")
 
         self.ctt.o(f"multiplier", rank="sim spec")
-        spectrum = self.targets_spectrum[self.TARGET](self.lambdas)
+        if giveSpectrum is None:
+            spectrum = self.targets_spectrum[self.TARGET](self.lambdas)
+        else:
+            spectrum = giveSpectrum
         if self.TARGET not in ["calib", "calPX"] :
             spectrum *= self.disperser.transmission(self.lambdas)
             spectrum *= self.telescope_transmission(self.lambdas)
@@ -496,43 +671,53 @@ class SpecSimulator():
         for x in range(argmin, argmax):
 
             self.ctt.o(f"find min/max", rank='bpc')
-            xmin = max(0, int(X_c[x]                  - timbre_size))
+            xmin = max(0, int(X_c[x]              - timbre_size))
             xmax = min(self.hp.SIM_NX, int(X_c[x] + timbre_size))
-            ymin = max(0, int(Y_c[x]                  - timbre_size))
+            ymin = max(0, int(Y_c[x]              - timbre_size))
             ymax = min(self.hp.SIM_NY, int(Y_c[x] + timbre_size))
             self.ctt.c(f"find min/max")
 
-            self.ctt.o(f"Xpix, Ypix", rank='bpc')
-            Xpix, Ypix = self.pixels[:, ymin:ymax, xmin:xmax]
-            timbreX[:ymax-ymin, :xmax-xmin] = Xpix
-            timbreY[:ymax-ymin, :xmax-xmin] = Ypix
-            argf = [f_arg(self.lambdas[x], *arg) for f_arg, arg in zip(self.psf_function['f_arg'], self.psf_function['arg'])]
-            self.ctt.c(f"Xpix, Ypix")
+            if xmin < xmax and ymin < ymax:
 
-            self.ctt.o(f"psf_func", rank='bpc')
-            if not self.psf_function['need_order']:
-                psf2add = self.psf_function['f'](timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
-            else:
-                psf2add = self.psf_function['f'](order, self.ROTATION_ANGLE, timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
-            psf_cube[ymin:ymax, xmin:xmax] += psf2add
+                self.ctt.o(f"Xpix, Ypix", rank='bpc')
+                Xpix, Ypix = self.pixels[:, ymin:ymax, xmin:xmax]
+                ##c print(f"{c.c}XYMINMAX : {xmin}, {xmax}, {ymin}, {ymax}{c.d}")
+                ##c print(f"{c.c}Xpix : {Xpix.shape} /// {timbreX[:ymax-ymin, :xmax-xmin].shape}{c.d}")
+                timbreX[:ymax-ymin, :xmax-xmin] = Xpix
+                timbreY[:ymax-ymin, :xmax-xmin] = Ypix
+                argf = [f_arg(self.lambdas[x], *arg) for f_arg, arg in zip(self.psf_function['f_arg'], self.psf_function['arg'])]
+                self.ctt.c(f"Xpix, Ypix")
 
-            if "debug" in sys.argv and self.lambdas[x] >= 800:
+                self.ctt.o(f"psf_func", rank='bpc')
+                if not self.psf_function['need_order']:
+                    psf2add = self.psf_function['f'](timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
+                else:
+                    psf2add = self.psf_function['f'](order, self.ROTATION_ANGLE, timbreX, timbreY, amplitude[x], X_c[x], Y_c[x], *argf)[:ymax-ymin, :xmax-xmin]
+                psf_cube[ymin:ymax, xmin:xmax] += psf2add
 
-                print(amplitude[x], X_c[x], Y_c[x], argf)
+                if "debug-psf" in sys.argv and self.lambdas[x] >= 800:
 
-                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6), gridspec_kw={'width_ratios': [1, 3]})
-                ax1.imshow(np.log10(psf2add+1), cmap="gray", origin="lower")
-                ax1.set_title(f"PSF add for lambdas = {self.lambdas[x]}")
-                ax2.imshow(np.log10(psf_cube+1), cmap="gray", origin="lower")
-                ax2.set_title(f"Full PSF")
-                plt.show()
+                    print(amplitude[x], X_c[x], Y_c[x], argf)
 
-            if self.colorSimu:
-                R, G, B, A = self.wavelength_to_rgb(self.lambdas[x])
-                psf_cube_RGB[ymin:ymax, xmin:xmax, 0] += R * psf2add
-                psf_cube_RGB[ymin:ymax, xmin:xmax, 1] += G * psf2add
-                psf_cube_RGB[ymin:ymax, xmin:xmax, 2] += B * psf2add
-            self.ctt.c(f"psf_func")
+                    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6), gridspec_kw={'width_ratios': [1, 3]})
+                    ax1.imshow(np.log10(psf2add+1), cmap="gray", origin="lower")
+                    ax1.set_title(f"PSF add for lambdas = {self.lambdas[x]}")
+                    ax2.imshow(np.log10(psf_cube+1), cmap="gray", origin="lower")
+                    ax2.set_title(f"Full PSF")
+                    plt.show()
+
+                if self.colorSimu:
+                    R, G, B, A = self.wavelength_to_rgb(self.lambdas[x])
+                    psf_cube_RGB[ymin:ymax, xmin:xmax, 0] += R * psf2add
+                    psf_cube_RGB[ymin:ymax, xmin:xmax, 1] += G * psf2add
+                    psf_cube_RGB[ymin:ymax, xmin:xmax, 2] += B * psf2add
+                self.ctt.c(f"psf_func")
+
+            elif "debug-psf" in sys.argv:
+
+                print(f"xmin >= xmax or ymin >= ymax")
+
+
 
         return psf_cube, psf_cube_RGB
 
@@ -748,7 +933,7 @@ class SpecSimulator():
             transformation = flip @ rotation
             adr_x, adr_y = (np.asarray([adr_ra, adr_dec]).T @ transformation).T
 
-            if "debug" in sys.argv:
+            if "debug-adr" in sys.argv:
                 print("flip, a, rotation, transformation")
                 print(flip, "\n", a, "\n", rotation, "\n", transformation)
                 print(f"Here ADR XY with order with size : {np.shape(adr_x)}")

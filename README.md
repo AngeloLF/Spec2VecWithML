@@ -44,7 +44,7 @@ Need arguments:
     * *ctio* : Cerro Tololo Inter-American Observatory, Chili
     * *stardice* : A 40 cm telescope in OHP, France
     * *auxtel* : The auxialiary telescope of Rubin Observatoire, Chili
-  * `seed` : seed to pick parameters. Can be give individualy or once for all.
+  * `seed` : seed to pick parameters
 
 ```bash
 python jobAndBots/making_batch.py simu nsimu=16384,2048,1024,1024,1024 type=train,valid,test,testext,testot seed=413 tel=auxtel
@@ -59,6 +59,7 @@ For training models :
   * *train* : name of trains, but only the number of simulations (like "16k" for "train16kauxtel")
   * *lr* : list of learning rates (like "1e-4", "1e-5")
   * *tel* : list of telescope (like "auxtel", "ctio", "stardice")
+  * `seed` : seed to pick parameters
 
 ```bash
 python jobAndBots/making_batch.py training model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel e=500
@@ -80,6 +81,7 @@ For apply a model, and also apply Spectractor :
     * *gaussian* for testGAUSSIAN
     * *gaussianna* : for testGAUSSIANNA
     * *stardice* for testSTARDICE
+  * `seed` : seed to pick parameters
 
 For apply Spectractor, *test* and *tel* needed. *ncpu* can also be given, to cut the apply.
 
@@ -101,13 +103,22 @@ For analyse results :
   * *tel* : list of telescope
   * *test* : list of test to apply
   * *score* : list of score to calculate (L1 and chi2)
+  * `seed` : seed to pick parameters
 
 
 ```bash
-python jobAndBots/making_batch.py analyse model=SCaM loss=chi2,MSE lr=1e-4,1e-5,5e-5 train=16k test=x,ext,ot tel=auxtel score=L1,chi2
+python jobAndBots/making_batch.py analyse model=SCaM loss=chi2,MSE lr=1e-4,1e-5 train=16k test=x,ext,ot tel=auxtel score=L1,chi2
 python jobAndBots/making_batch.py analyse model=Spectractor loss=x lr=0e+0 train=x test=x,ext,ot tel=auxtel score=L1,chi2
 ```
 
+
+### Produce resume analyse
+
+All analyses can be resume in single html pages with all scores. Just make :
+
+```bash
+python analyses/recup_score.py
+```
 
 
 

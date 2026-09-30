@@ -592,6 +592,20 @@ if __name__ == "__main__":
     Paths = SimpleNamespace()
     Folds = SimpleNamespace()
 
+    print(f"\n\n\n\n********** Analyse.py ********")
+    print(f"* TRAIN : {Args.train}")
+    print(f"* TEST  : {Args.test}")
+    print(f"* PREDF : pred_{Args.fullname}")
+    print(f"* SCORE : {Args.score}")
+    print(f"******************************")
+
+
+    # On vérfie si les applies sont existant avant de faire l'analyse
+    if f"pred_{Args.fullname}" not in os.listdir(f"./results/output_simu/{Args.test}"):
+
+        print(f"{c.r}WARNING : pred_{Args.fullname} not in ./results/output_simu/{Args.test} (pass){c.d}")
+        sys.exit()
+
 
     # Define path test
     if "output" in Args.test : Paths.for_test = "./results"

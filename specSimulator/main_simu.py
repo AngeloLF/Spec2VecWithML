@@ -11,7 +11,7 @@ var_params = {
         "ATM_AEROSOLS" : [0.1, 0.8],
         "ATM_OZONE" : [250.0, 350.0],
         "ATM_PWV" : [2.0, 10.0],
-        "ATM_AIRMASS" : [1.2, 2.0],
+        "ATM_AIRMASS" : [2.0, 2.2],
         "A" : [0.8, 1.2],
     },
     "test" : {
@@ -41,15 +41,18 @@ for arg in sys.argv[1:]:
 
 ### var params for telescope
 
-if "tel" in argv.keys():
+if "tel" in argv.keys() and argv["tel"] == "ctio":
 
-    if argv["tel"] == "ctio":
-        var_params["train"]["ROTATION_ANGLE"] = [-2.0, 2.0]
-        var_params["test"]["ROTATION_ANGLE"] = [-3.0, 3.0]
+    var_params["train"]["ROTATION_ANGLE"] = [-2.0, 2.0]
+    var_params["test"]["ROTATION_ANGLE"] = [-3.0, 3.0]
 
-    elif argv["tel"] == "auxtel":
-        var_params["train"]["ROTATION_ANGLE"] = [-0.1, 0.1]
-        var_params["test"]["ROTATION_ANGLE"] = [-0.1, 0.1]
+elif "tel" in argv.keys() and argv["tel"] == "auxtel":
+    var_params["train"]["ROTATION_ANGLE"] = [-0.1, 0.1]
+    var_params["test"]["ROTATION_ANGLE"] = [-0.1, 0.1]
+
+elif "tel" in argv.keys() and argv["tel"] == "fstardice":
+    var_params["train"]["ROTATION_ANGLE"] = [19.9, 20.1]
+    var_params["test"]["ROTATION_ANGLE"] = [19.9, 20.1]
 
 else: # it's ctio by default
     var_params["train"]["ROTATION_ANGLE"] = [-2.0, 2.0]
@@ -60,26 +63,21 @@ else: # it's ctio by default
 
 ### var params for psf
 
-if "psf" in argv.keys():
+if "psf" in argv.keys() and argv["psf"] == "moffat2d":
+    var_params["train"]["arg.0.0"] = [3.0, 8.0]
+    var_params["test"]["arg.0.0"] = [2.0, 10.0]
 
-    if argv["psf"] == "moffat2d":
-        var_params["train"]["arg.0.0"] = [3.0, 8.0]
-        var_params["test"]["arg.0.0"] = [2.0, 10.0]
+elif "psf" in argv.keys() and argv["psf"] == "gaussian2d":
+    var_params["train"]["arg.0.0"] = [3.0, 8.0]
+    var_params["test"]["arg.0.0"] = [2.0, 10.0]
 
-    elif argv["psf"] == "gaussian2d":
-        var_params["train"]["arg.0.0"] = [3.0, 8.0]
-        var_params["test"]["arg.0.0"] = [2.0, 10.0]
+elif "psf" in argv.keys() and argv["psf"] == "gaussian2d_na":
+    var_params["train"]["arg.0.0"] = [3.0, 8.0]
+    var_params["test"]["arg.0.0"] = [2.0, 10.0]
 
-    elif argv["psf"] == "gaussian2d_na":
-        var_params["train"]["arg.0.0"] = [3.0, 8.0]
-        var_params["test"]["arg.0.0"] = [2.0, 10.0]
-
-    elif argv["psf"] == "moffat2d_na":
-        var_params["train"]["arg.0.0"] = [3.0, 8.0]
-        var_params["test"]["arg.0.0"] = [2.0, 10.0]
-
-    else:
-        pass
+elif "psf" in argv.keys() and argv["psf"] == "moffat2d_na":
+    var_params["train"]["arg.0.0"] = [3.0, 8.0]
+    var_params["test"]["arg.0.0"] = [2.0, 10.0]
 
 else: # it's moffat by default
     var_params["train"]["arg.0.0"] = [3.0, 8.0]
@@ -90,7 +88,6 @@ if "moffat2d_alpha_variation" in argv["__free__"]:
     var_params["train"]["arg.1.0"] = [1.5, 2.5]
     var_params["test"]["arg.1.0"] = [1.5, 2.5]
 
-# 
 
 
 
@@ -108,6 +105,11 @@ if "test" not in sys.argv:
     hp = Hparams(var_params=var_params["train"], with_noise=noisy)
 else:
     hp = Hparams(var_params=var_params["test"], with_noise=noisy)
+
+# test of very high pressure
+if "highPressure" in sys.argv:
+    print(f"High pressure to 2000. hPa")
+    hp.OBS_PRESSURE = 2000.
 
 sim = SpecSimulator(hp)
 sim.run()

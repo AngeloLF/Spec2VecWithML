@@ -6,8 +6,11 @@ import utils_spec.psf_func as pf
 
 
 
-
 def HparamsFromJson(jsonfile):
+
+    """
+        Permet de recup d'ancien hyper paramètres, qui sont créer a chaque fois qu'une simu est effectuer dans <simu_folder>/hparams.json
+    """
 
 
     with open(jsonfile, "r") as f:
@@ -17,11 +20,15 @@ def HparamsFromJson(jsonfile):
     if not "seed" in hp.keys():
         hp["seed"] = None
 
+    # If a dataset was created with a old version of Hparams
+    if not "with_gaia" in hp.keys():
+        hp["with_gaia"] = False
+
     return Hparams(hp["telescope"], hp["target_set"], hp["psf_function"], hp["vparams"], hp["nsimu"], hp["with_noise"], hp['seed'],
         [hp["LAMBDA_MIN"], hp["LAMBDA_MAX"]], hp["LAMBDA_STEP"], hp["SPECTRACTOR_ATMOSPHERE_SIM"], hp["FLAM_TO_ADURATE"],
         disperser_dir=hp["DISPERSER_DIR"], throughput_dir=hp["THROUGHPUT_DIR"], 
-        output_path=".", output_dir=hp["output_path"], output_simu_dir=hp["output_dir"], output_simu_fold=hp["output_fold"])
-
+        output_path=".", output_dir=hp["output_path"], output_simu_dir=hp["output_dir"], output_simu_fold=hp["output_fold"],
+        with_gaia=hp["with_gaia"])
 
 
 
@@ -29,8 +36,8 @@ def HparamsFromJson(jsonfile):
 class Hparams():
 
     """
+        Class qui contients / compute les hypers paramètres 
     """
-
 
 
     # Targets for spectrums simulations
@@ -77,7 +84,6 @@ class Hparams():
     }
 
 
-
     # Liste of telescope parameters
     __TELESCOPES_KEYS = ["SIM_NX", "SIM_NY", "R0",
 
@@ -107,6 +113,8 @@ class Hparams():
 
             "DISPERSER"]
 
+
+    # Parameters for telescopes
     __TELESCOPES = {
 
         # alf
@@ -218,6 +226,42 @@ class Hparams():
             "DISPERSER" : "star_analyzer_200",
         },
 
+        # Full StarDICE
+        "fstardice" : {
+
+            # Simu parameters
+            "SIM_NX" : 1024,
+            "SIM_NY" : 1024,
+            "R0" : [128, 512],
+
+            # Instrument characteristics
+            "THROUGHPUT" : "StarDiceThroughput/StarDice_EMPTY_response_75um_pinhole.txt",
+            "OBS_NAME" : 'OHP',
+            "OBS_ALTITUDE" : 0.650,
+            "OBS_LATITUDE" : '+43 55 57.449',
+            "OBS_SURFACE" : 1161.6, 
+            "OBS_EPOCH" : "J2000.0",
+            "OBS_OBJECT_TYPE" : 'STAR',  # To choose between STAR, HG-AR, MONOCHROMATOR
+            "OBS_FULL_INSTRUMENT_TRANSMISSON" : 'StarDice_EMPTY_response_75um_pinhole.txt',
+            "OBS_TRANSMISSION_SYSTEMATICS" : 0.005,
+            "OBS_CAMERA_ROTATION" : 180,  # Camera (x,y) rotation angle with respect to (north-up, east-left) system in degrees
+            "OBS_CAMERA_DEC_FLIP_SIGN" : 1,  # Camera (x,y) flip signs with respect to (north-up, east-left) system
+            "OBS_CAMERA_RA_FLIP_SIGN" : -1,  # Camera (x,y) flip signs with respect to (north-up, east-left) system
+            "OBS_PRESSURE" : 937.2,
+
+            # CCD characteristics
+            "CCD_PIXEL2MM" : 13e-3,  # pixel size in mm
+            "CCD_PIXEL2ARCSEC" : 1.674,  # pixel size in arcsec
+            "CCD_MAXADU" : 60000,  # approximate maximum ADU output of the CCD
+            "CCD_GAIN" : 1.2,  # electronic gain : elec/ADU
+            "CCD_REBIN" : 1,  # rebinning of the image in pixel
+            "DISTANCE2CCD" : 33.3,  # distance between hologram and CCD in mm
+            "DISTANCE2CCD_ERR" : 0.1,  # uncertainty on distance between hologram and CCD in mm
+
+            # Disperser
+            "DISPERSER" : "star_analyzer_200",
+        },
+
         # auxtel
         "auxtel" : {
 
@@ -291,7 +335,6 @@ class Hparams():
     }
 
 
-
     # Parameters whitch can be variables in simulation
     __PARAMS = {
 
@@ -325,7 +368,7 @@ class Hparams():
     } 
 
 
-
+    # Parameters for PSFs
     __PSF_FUNCTIONS = {
 
         "moffat2d" : {
@@ -376,14 +419,15 @@ class Hparams():
 
 
 
+
     def __init__(self, telescope=None, target_set=None, psf=None, var_params=dict(), nsimu=None, with_noise=True, seed=None,
                  lambdas=[300, 1100], lambdas_step=1, atmo_model="getobsatmo", flam2adurate=1_067_400_516_204.6393,
                  disperser_dir="./specSimulator/datafile/dispersers",
                  throughput_dir="./specSimulator/datafile/throughput",
-                 output_path=".", output_dir = "results", output_simu_dir="output_simu", output_simu_fold="simulation"):
+                 gaia_dir="./specSimulator/datafile/gaia",
+                 output_path=".", output_dir = "results", output_simu_dir="output_simu", output_simu_fold="simulation", 
+                 with_gaia=False):
 
-        """
-        """
 
         # capture argv
         self.init_argv()
@@ -401,8 +445,14 @@ class Hparams():
         self.SPECTRACTOR_ATMOSPHERE_SIM = atmo_model
         self.DISPERSER_DIR = disperser_dir
         self.THROUGHPUT_DIR = throughput_dir
+        self.GAIA_DIR = gaia_dir
         self.CCD_ARCSEC2RADIANS = 1 / 180 * np.pi / 3600
         self.GRATING_ORDER_2OVER1 = 0.1  # default value for order 2 over order 1 transmission ratio
+
+        # with gaia
+        self.with_gaia = with_gaia if "with_gaia" not in self.argv.keys() else bool(self.argv["with_gaia"])
+        print(f"{c.m}INFO : With Gaias : {self.with_gaia}{c.d}")
+
 
         # SOME PATHS and DIRS
         self.output_path = output_path + "/" + output_dir
@@ -444,6 +494,7 @@ class Hparams():
 
 
 
+
     def init_argv(self):
 
         self.argv = {"__free__":list()}
@@ -458,6 +509,7 @@ class Hparams():
             else:
 
                 self.argv["__free__"].append(argv)
+
 
 
 
@@ -479,6 +531,7 @@ class Hparams():
         self.target_set = target_set
 
         self.target_name = self.__TARGET_SETS[self.target_set.lower()]
+
 
 
 
@@ -512,6 +565,7 @@ class Hparams():
                 exitProg = True
         if exitProg:
             raise Exception(f"{c.r}Error, complete missing parameter(s)...{c.d}")
+
 
 
 
@@ -613,6 +667,8 @@ class Hparams():
                     print(f"{c.r}INFO : le parametre variable {k} n'est pas utilisé car n'est pas dans les __PARAMS de Hparams{c.d}")
 
 
+
+
     def save(self, path=None, file="hparams", debug=False):
 
         if path is None:
@@ -630,6 +686,7 @@ class Hparams():
 
         with open(f"{path}/{file}.json", 'w') as f:
             json.dump(dico, f, indent=4)
+
 
 
 

@@ -11,19 +11,21 @@ import pandas as pd
 
 
 
-
-
 def recup_mt(scores, mode="dispo"):
 
-    models = list()
+    """
+        Recupere les noms de modèles et tests
+    """
+
+    models = [f"pred_Spectractor_x_x_0e+00"]
     tests = list()
 
     for score in scores:
 
-        models = [m for m in os.listdir(f"./results/analyse/{score}") if not "." in m]
+        models += [m for m in os.listdir(f"./results/analyse/{score}") if not "." in m]
 
         for model in models:
-            tests += [t for t in os.listdir(f"./results/analyse/{score}/{model}") if not "." in t]
+            tests += [t.split("-")[0] for t in os.listdir(f"./results/analyse/{score}/{model}") if not "." in t]
 
     return list(set(models)), list(set(tests))
 
@@ -32,11 +34,57 @@ def recup_mt(scores, mode="dispo"):
 
 
 
+def del_seed(text):
+
+    ele = text.split(" ")
+    ele[2] = ele[2].split("-")[0]
+
+    return " ".join(ele)
 
 
-def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', savefig_name=None, markers=None, colors=None, absSorting=False):
+
+def general_plot(xtexts, y, ymin, ymax, title="<title>"):
+
+    """
+        Make a general plots with all model and Spectractor
+    """
+
+    x_ws = list()
+    y_ws = list()
+
+    # to finish ...
 
 
+
+    x2i = dict()
+
+
+    x_ws = [del_seed(text) for text in xtexts]
+    x_ws_unique = np.unique(x_ws)
+    x = np.arange(np.size(x_ws_unique))
+
+    plt.scatter(x_ws, y, color="k")
+
+    for xi, yi, ymin_i, ymax_i in zip(x_ws, y, ymin, ymax):
+
+        plt.plot([xi]*2, [ymin_i, ymax_i], color="k")
+
+
+    plt.xticks(x, x_ws_unique, rotation=90)
+    plt.title(title)
+    plt.tight_layout()
+    plt.show()
+
+
+
+def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', title="<title>", savefig_name=None, markers=None, colors=None, absSorting=False):
+
+    """
+        Créer le fichier HTML pour visualiser la les scores produit par les analyses.
+    """
+
+
+    # Pour trier par le score
     if sorting:
 
         if not absSorting:
@@ -46,10 +94,17 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
 
         y = y[index]
         text = text[index]
-        lignes = [lignes[i] for i in index]
-        lignes4graph = [ligne for ligne in lignes if not ("cal" in ligne and not "wc" in ligne)]
+        lignes = [lignes[i][5:].replace("_", " ") for i in index]
+        # lignes4graph = [ligne for ligne in lignes if not ("cal" in ligne and not "wc" in ligne)]
+
+        mean_scores = y[:, -3]
+        min_scores = np.min(y[:, :-3], axis=1)
+        max_scores = np.max(y[:, :-3], axis=1)
+
+        general_plot(lignes, mean_scores, min_scores, max_scores, title=title)
 
 
+    # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
     tds = {
         "def" : "td",
             
@@ -64,18 +119,21 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
         "nan" : 'td style="background-color: #000000;"',
     }
 
+
+    # Vérifie rapidement que les lignes et colonnes coincide
     if text.shape != (len(lignes), len(colonnes)):
         raise ValueError("Les dimensions de y ne correspondent pas aux longueurs des listes ligne et colonne.")
 
+
+    # on démarre l'HTML, puis on commence l'entête
     html = '<table border="1" style="border-collapse: collapse; text-align: center;">\n'
-    
-    # En-tête
-    html += '  <tr><th></th>'  # Coin supérieur gauche vide
+    html += '  <tr>\n    <th></th>'  # Coin supérieur gauche vide
     for col in colonnes:
-        html += f'<th> {col} </th>'
-    html += '</tr>\n'
+        html += f'\n    <th> {col} </th>'
+    html += '\n  </tr>\n'
 
 
+    # calcule les extremums 
     buffer_y = np.copy(y)
     buffer_y[y == np.inf] = np.nan
 
@@ -84,18 +142,15 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
 
     for k in range(buffer_y.shape[1]):
 
-        # print(buffer_y[:, k])
-
         if not np.all(np.isnan(buffer_y[:, k])):
 
             argmin[k], argmax[k] = np.nanargmin(buffer_y[:, k]), np.nanargmax(buffer_y[:, k])
             valmin[k], valmax[k] = np.nanmin(buffer_y[:, k]),    np.nanmax(buffer_y[:, k])
 
-    # print(len(argmin), buffer_y.shape)
 
     # Lignes de données
     for i, ligne in enumerate(lignes):
-        html += f'  <tr><th> {ligne} </th>'
+        html += f'  <tr>\n    <th> {ligne} </th>'
         for j in range(len(colonnes)):
 
             if   i == argmin[j] : td = tds["min"]
@@ -108,8 +163,8 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
 
             if np.isnan(buffer_y[i, j]) : td = tds["nan"]
 
-            html += f'<{td}>{text[i, j]}</td>'
-        html += '</tr>\n'
+            html += f'\n    <{td}>{text[i, j]}</td>'
+        html += '\n  </tr>\n'
     
     html += '</table>'
     return html
@@ -119,15 +174,22 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', sa
 
 
 
-def make_score(score_type, models, tests):
- 
+
+
+def make_score(score_type, models, tests, seed4spectractor):
+
+    """
+        Fonction principale, repère les scores, génère l'HTML ...
+    """
+    
+
+    # iteration sur les type de score (L1, chi2, ...)
     for score in score_type:
 
-        print(f"Make score {score}")
+        print(f"\n{c.g}Recup data for score : {c.tu}{score}{c.d}")
 
         # Sorting lists
         models.sort()
-
 
         y = np.zeros((2, len(models), len(tests)+3)) + np.inf
         e = np.zeros((2, len(models), len(tests)+3)) + np.inf
@@ -135,18 +197,27 @@ def make_score(score_type, models, tests):
         x[:, :] = '---'
 
         
+        # iteration sur les models 
         for m, model in enumerate(models):
 
-            print(f"    model {model}")
+            if "Spectractor" in model:
+                seed_detected = seed4spectractor
+            else:
+                seed_detected = model.split("_")[3].split("-")[-1]
 
+            print(f"    {c.lm}* model {model} {c.m}[seed:{seed_detected}]{c.d}")
             tot_mean = [list(), list()]
             tot_std = [list(), list()]
 
-            for t, test in enumerate(tests):
 
-                print(f"        test {test}")
+            # iteration sur les tests
+            for t, test_without_seeds in enumerate(tests):
+
+                test = test_without_seeds + "-" + seed_detected
 
                 if model in os.listdir(f"{path_analyse}/{score}") and test in os.listdir(f"{path_analyse}/{score}/{model}"):
+
+                    print(f"        - extract test {test_without_seeds}{c.lk}-{seed_detected}{c.d}")
 
                     with open(f"{path_analyse}/{score}/{model}/{test}/resume.txt", "r") as f:
                         data = f.read().split("\n")[:-1]
@@ -164,17 +235,22 @@ def make_score(score_type, models, tests):
 
                         y[i, m, t] = mean
                         e[i, m, t] = std
-                        x[i, m, t] = f"{mean:.2f} ~ {std:.2f}"
-                        if score == "L1"     : x[i, m, t] = f"{mean:.2f} ~ {std:.2f}"
-                        elif score == "chi2" : x[i, m, t] = f"{mean:.4f} ~ {std:.4f}"
+                        x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
+                        if score == "L1"     : x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
+                        elif score == "chi2" : x[i, m, t] = f"{mean:.4f} ± {std:.4f}"
                         else : raise Exception(f"Score {score} unknow")
 
                         tot_mean[i].append(mean)
                         tot_std[i].append(std)
 
+                elif test.split("-")[-1] == seed_detected:
+
+                    print(f"{c.lk}        - Not find : {path_analyse}/{score}/{model}/{test}/resume.txt{c.d}")
+
                 else:
 
-                    print(f"{c.lk}        -> Not find : {path_analyse}/{score}/{model}/{test}/resume.txt{c.d}")
+                    # la seed n'est pas la même donc c'est ok
+                    pass
 
 
             for i in range(2):
@@ -183,8 +259,8 @@ def make_score(score_type, models, tests):
                 soa = np.sum(np.array(tot_std[i])**2)**0.5
                 y[i, m, -3] = mom
                 e[i, m, -3] = soa
-                if score == "L1"     : x[i, m, -3] = f"{mom:.2f} ~ {soa:.2f}"
-                elif score == "chi2" : x[i, m, -3] = f"{mom:.6f} ~ {soa:.6f}"
+                if score == "L1"     : x[i, m, -3] = f"{mom:.2f} ± {soa:.2f}"
+                elif score == "chi2" : x[i, m, -3] = f"{mom:.6f} ± {soa:.6f}"
                 else : raise Exception(f"Score {score} unknow")
 
 
@@ -215,8 +291,8 @@ def make_score(score_type, models, tests):
 
                 for i, typeScore in enumerate(["classic", "norma"]):
 
-                    html_codes.append(f"<h2>{typeScore}</h2>")
-                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, savefig_name=f"{path_resume}/graph/zzz"))
+                    html_codes.append(f"\n\n<h2>{typeScore}</h2>")
+                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, title=f"Stat. for {score} [{typeScore}]", savefig_name=f"{path_resume}/graph/zzz"))
 
                 f.write('\n'.join(html_codes))
 
@@ -227,6 +303,9 @@ def make_score(score_type, models, tests):
 
 if __name__ == "__main__":
 
+    seed4spectractor = sys.argv[1]
+    print(f"Seed choose for Spectractor : {seed4spectractor}")
+
     score_type = ["L1", "chi2"]
     path_analyse = f"./results/analyse"
     path_resume = f"{path_analyse}/all_resume"
@@ -236,11 +315,11 @@ if __name__ == "__main__":
     os.makedirs(f"{path_resume}/graph", exist_ok=True)
     os.makedirs(f"{path_resume}/html", exist_ok=True)
 
-    models, tests = recup_mt(score_type)
+    models, tests = recup_mt(score_type, seed4spectractor)
     print(f"{c.y}INFO : finding models : ", ", ".join(models), c.d)
     print(f"{c.y}INFO : finding tests folders : ", ", ".join(tests), c.d)
 
-    make_score(score_type, models, tests)
+    make_score(score_type, models, tests, seed4spectractor)
 
 
 

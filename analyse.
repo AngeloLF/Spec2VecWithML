@@ -1,0 +1,12 @@
+sbatch ./analyse_Spectractor_x_x_test8auxtel-413_0e+0_L1_None.sh
+sbatch ./analyse_Spectractor_x_x_test8auxtel-413_0e+0_chi2_None.sh
+sbatch ./analyse_Spectractor_x_x_test8EXTauxtel-413_0e+0_L1_None.sh
+sbatch ./analyse_Spectractor_x_x_test8EXTauxtel-413_0e+0_chi2_None.sh
+sbatch ./analyse_Spectractor_x_x_test8OTauxtel-413_0e+0_L1_None.sh
+sbatch ./analyse_Spectractor_x_x_test8OTauxtel-413_0e+0_chi2_None.sh
+sbatch ./analyse_Spectractor_x_x_test8auxtel-159_0e+0_L1_None.sh
+sbatch ./analyse_Spectractor_x_x_test8auxtel-159_0e+0_chi2_None.sh
+sbatch ./analyse_Spectractor_x_x_test8EXTauxtel-159_0e+0_L1_None.sh
+sbatch ./analyse_Spectractor_x_x_test8EXTauxtel-159_0e+0_chi2_None.sh
+sbatch ./analyse_Spectractor_x_x_test8OTauxtel-159_0e+0_L1_None.sh
+sbatch ./analyse_Spectractor_x_x_test8OTauxtel-159_0e+0_chi2_None.sh
