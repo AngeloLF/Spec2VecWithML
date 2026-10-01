@@ -388,7 +388,6 @@ def open_fold(args, paths, folds, nb_level=20):
     sim = SpecSimulator(hpClass, savingFolders=False)
     
 
-
     # loading of each spectrum
     for i, file in enumerate(files):
 
@@ -667,10 +666,29 @@ if __name__ == "__main__":
 
 
 
+
     res, var = open_fold(Args, Paths, Folds)
 
 
 
+
+    # save a file to remember score
+
+    rfiles = res["file"]
+
+    for rtype in ["classic", "norma"]:
+
+        rscore = res[rtype]
+        args = np.argsort(rscore)
+        remember_file = "\n".join([f"{rfiles[i]} : {rscore[i]}" for i in args])
+        print(f"{c.y}INFO : save {Paths.save}/remember_score_{rtype}.txt ...{c.d}")
+        with open(f"{Paths.save}/remember_score_{rtype}.txt", "w") as f:
+            f.write(remember_file)
+
+
+
+    # make plots ..
+    print(f"{c.y}INFO : make plots ...{c.d}")
     for key, val in var.items():
 
         if key != "TARGET":
@@ -773,6 +791,8 @@ if __name__ == "__main__":
 
     with open(f"{Paths.save}/resume.txt", "w") as f:
 
+        print(f"{c.y}INFO : save resume ...{c.d}")
+
         for mode in ["classic", "norma"]:
 
             true_res = np.copy(res[mode])[~np.isnan(res[mode])]
@@ -783,5 +803,5 @@ if __name__ == "__main__":
 
             f.write(f"{mode}={np.mean(true_res[args[imin:imax]])}~{np.std(true_res[args[imin:imax]])}\n")
 
-
+    print(f"{c.y}*** END ANALYSE ***{c.d}")
 
