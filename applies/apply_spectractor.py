@@ -267,6 +267,7 @@ def apply_spectractor(testname, pathtest="./results/output_simu", makeonly=None,
                 loop += 1
 
                 try:
+
                     # EXTRACTION
                     spectrum = extractor.Spectractor(savefile, f"{testdir}/spectrum_fits", guess=[64*rebin, 512*rebin], target_label=vp["TARGET"][n], disperser_label=hp["DISPERSER"], config=config)
                     

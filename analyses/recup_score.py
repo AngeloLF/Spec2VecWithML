@@ -138,7 +138,81 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.05, savefig_name=None):
 
 
 
-def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', title="<title>", savefig_name=None, markers=None, colors=None, absSorting=False):
+def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.05):
+    
+    # x2r : r are models name WITHOUT seeds
+    x2r = dict()
+
+    # r2s : s are list of 3 list : y, std for each r
+    r2s = dict()
+    r = list()
+
+    # Spectractor data
+    spectractor_scores = None
+
+    for xi, yi, ystdi in zip(x, y, ystd):
+
+        if "Spectractor" in xi:
+            spectractor_scores = [yi, ystdi]
+
+        else:
+            ri = del_seed(xi)
+
+            if ri not in r2s.keys():
+                r2s[ri] = [list(), list()]
+                r.append(ri)
+
+            x2r[xi] = ri
+            r2s[ri][0].append(yi)
+            r2s[ri][1].append(ystdi)
+
+    r = np.array(r)
+    s = np.array([np.mean(r2s[ri][0]) for ri in r])
+    nseed = len(r2s[r[0]][0])
+    di0 = di/2*nseed
+
+    args = np.argsort(s)
+    r = r[args]
+    s = s[args]
+
+    plt.figure(figsize=(16, 12))
+
+    for i, (ri, si) in enumerate(zip(r, s)):
+
+        modeli = ri.split(" ")[0]
+
+        plt.scatter(i-di0, si, color=models_colors[modeli][0])
+
+        if i == 0:
+            title += f" [best {ri} with {si:.4f}]"
+
+        for j, (yj, ystdj) in enumerate(zip(*r2s[ri])):
+
+            plt.scatter(i-di0+di*(j+1), yj, color=models_colors[modeli][1], marker="+")
+            plt.errorbar([i-di0+di*(j+1)], yj, yerr=ystdj, color=models_colors[modeli][1])
+
+    if spectractor_scores is not None:
+
+        xs = np.arange(len(r))
+        x1 = np.ones(len(r))
+        plt.axhspan(max(0, spectractor_scores[0]-spectractor_scores[1]), spectractor_scores[0]+spectractor_scores[1], color="k", alpha=0.5)
+        plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
+
+    plt.xticks(np.arange(len(r)), r, rotation=90)
+    plt.title(title)
+    plt.ylabel(col)
+    plt.legend()
+    plt.tight_layout()
+    if savefig_name is not None:
+        plt.savefig(savefig_name)
+        plt.close()
+    else:
+        plt.show()
+
+
+
+
+def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.', title="<title>", savefig_name=None, markers=None, colors=None, absSorting=False):
 
     """
         Créer le fichier HTML pour visualiser la les scores produit par les analyses.
@@ -159,6 +233,7 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', ti
         # lignes4graph = [ligne for ligne in lignes if not ("cal" in ligne and not "wc" in ligne)]
 
         mean_scores = y[:, -3]
+        std_scores = e[:, -3]
 
         ynan = np.copy(y)
         ynan[~np.isfinite(ynan)] = np.nan
@@ -166,7 +241,10 @@ def generate_html_table(colonnes, lignes, text, y, sorting=False, marker='.', ti
         min_scores = np.nanmin(ynan[:, :-3], axis=1)
         max_scores = np.nanmax(ynan[:, :-3], axis=1)
 
-        general_plot(lignes, mean_scores, min_scores, max_scores, title=title, savefig_name=savefig_name)
+        general_plot(lignes, mean_scores, min_scores, max_scores, title=title, savefig_name=savefig_name+".png")
+
+        for i, col in enumerate(colonnes[:-3]):
+            oneTest_plot(col, lignes, y[:, i], e[:, i], title=title, savefig_name=savefig_name+" "+col+".png")
 
 
     # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
@@ -353,7 +431,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                 for i, typeScore in enumerate(["classic", "norma"]):
 
                     html_codes.append(f"\n\n<h2>{typeScore}</h2>")
-                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], sorting=sorting, title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}.png"))
+                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], e[i], sorting=sorting, title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}"))
 
                 f.write('\n'.join(html_codes))
 
