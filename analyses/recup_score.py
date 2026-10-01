@@ -52,7 +52,7 @@ def del_seed(text):
 
 
 
-def general_plot(x, y, ymin, ymax, title="<title>", di=0.05, savefig_name=None):
+def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
 
     """
         Make a general plots with all model and Spectractor
@@ -138,7 +138,7 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.05, savefig_name=None):
 
 
 
-def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.05):
+def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
     
     # x2r : r are models name WITHOUT seeds
     x2r = dict()
@@ -245,7 +245,7 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
         general_plot(lignes, mean_scores, min_scores, max_scores, title=title, savefig_name=savefig_name+".png")
 
         for i, col in enumerate(colonnes[:-3]):
-            oneTest_plot(col, lignes, y[:, i], e[:, i], title=title, savefig_name=savefig_name+" "+col+".png")
+            oneTest_plot(col, lignes, y[:, i], e[:, i]/2, title=title, savefig_name=savefig_name+" "+col+".png")
 
 
     # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
