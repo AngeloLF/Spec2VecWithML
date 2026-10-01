@@ -228,6 +228,7 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
             index = np.argsort(np.abs(y[:, -3]))
 
         y = y[index]
+        e = e[index]
         text = text[index]
         lignes = [lignes[i][5:].replace("_", " ") for i in index]
         # lignes4graph = [ligne for ligne in lignes if not ("cal" in ligne and not "wc" in ligne)]
