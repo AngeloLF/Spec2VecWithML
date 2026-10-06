@@ -186,7 +186,7 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
         plt.scatter(i-di0, si, color=models_colors[modeli][0])
 
         if i == 0:
-            title += f" [best {ri} with {si:.4f}]"
+            title += f" [best {ri} with {si:.3f}]"
 
         for j, (yj, ystdj) in enumerate(zip(*r2s[ri])):
 
@@ -200,7 +200,7 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
         plt.axhspan(max(0, spectractor_scores[0]-spectractor_scores[1]), spectractor_scores[0]+spectractor_scores[1], color="k", alpha=0.2)
-        plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
+        plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.3f}")
         plt.legend()
 
     plt.xticks(np.arange(len(r)), r, rotation=90)
@@ -274,7 +274,7 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
 
 
     # on démarre l'HTML, puis on commence l'entête
-    html = '<head>\n  <meta charset="UTF-8"/>\n</head>\n<table border="1" style="border-collapse: collapse; text-align: center;">\n'
+    html = '<head>\n  <meta charset="UTF-8"/>\n</head>\n<table border="1" style="border-collapse: collapse; text-align: center; table-layout: fixed; width: 100%;">\n'
     html += '  <tr>\n    <th></th>'  # Coin supérieur gauche vide
     for col in colonnes:
         html += f'\n    <th> {col} </th>'
@@ -380,7 +380,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                         y[i, m, t] = mean
                         e[i, m, t] = std
                         x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
-                        if score == "L1"     : x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
+                        if score == "L1"     : x[i, m, t] = f"{mean:.1f} ± {std:.1f}"
                         elif score == "chi2" : x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
                         else : raise Exception(f"Score {score} unknow")
 
@@ -416,8 +416,8 @@ def make_score(score_type, models, tests, seed4spectractor):
                 soa = np.sum(np.array(tot_std[i])**2)**0.5
                 y[i, m, -3] = mom
                 e[i, m, -3] = soa
-                if score == "L1"     : x[i, m, -3] = f"{mom:.2f} ± {soa:.2f}"
-                elif score == "chi2" : x[i, m, -3] = f"{mom:.6f} ± {soa:.6f}"
+                if score == "L1"     : x[i, m, -3] = f"{mom:.1f} ± {soa:.1f}"
+                elif score == "chi2" : x[i, m, -3] = f"{mom:.3f} ± {soa:.3f}"
                 else : raise Exception(f"Score {score} unknow")
 
 
@@ -434,10 +434,10 @@ def make_score(score_type, models, tests, seed4spectractor):
             order_norma = order / (nb_m-1) * 100
 
             y[i, :, -1] = order_norma + 100
-            x[i, :, -1] = [f"{o:.2f} %" for o in order_norma]
+            x[i, :, -1] = [f"{o:.1f} %" for o in order_norma]
 
             y[i, :, -2] = order_norma + 100
-            x[i, :, -2] = [f"{1+o}" for o in order]
+            x[i, :, -2] = [f"{1+o:.0f}" for o in order]
 
 
         for sorting, sorting_str in [(False, ""), (True, "_sorting")]:
