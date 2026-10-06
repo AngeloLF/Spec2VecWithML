@@ -327,7 +327,8 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
             elif y[i, j] > valmax[j] / 1.2 : style2add.append(tds["near_max"])
             else : pass
 
-            html += f'\n    <td style="{' '.join(style2add)}"> {text[i, j]} </td>'
+
+            html += f'\n    <td style="{" ".join(style2add)}"> {text[i, j]} </td>'
 
         html += '\n  </tr>\n'
     
