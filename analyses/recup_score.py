@@ -123,7 +123,8 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
         if spectractor_scores[2] - spectractor_scores[1] > 1e-6:
-            plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
+            #plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
+            plt.axhspan(spectractor_scores[1], spectractor_scores[2], color="k", alpha=0.2)
         plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.3f}")
         plt.legend()
 
@@ -198,7 +199,7 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
 
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
-        plt.axhspan(max(0, spectractor_scores[0]-spectractor_scores[1]), spectractor_scores[0]+spectractor_scores[1], color="k", alpha=0.5)
+        plt.axhspan(max(0, spectractor_scores[0]-spectractor_scores[1]), spectractor_scores[0]+spectractor_scores[1], color="k", alpha=0.2)
         plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
         plt.legend()
 
