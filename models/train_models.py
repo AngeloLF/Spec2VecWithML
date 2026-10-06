@@ -73,9 +73,43 @@ def load_model_from_Args(args):
 
 
 
-def load_optim(args):
 
-    if optim_name == "Adam" : return optim.Adam()
+model = nn.Linear(10, 2)
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
+
+
+
+
+def load_scheduler(optimizer, Args):
+    """
+        Ajout d'un scheduler pour optimiser le learning rate
+    """
+
+    name = getattr(Args, "sched", "cosine")   # "cosine", "plateau" ou "none"
+
+    if name == "cosine":
+        
+        warmup = min(5, max(1, Args.epochs // 20))
+        warm = optim.lr_scheduler.LinearLR(optimizer, start_factor=0.1, total_iters=warmup)
+        main = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, Args.epochs - warmup), eta_min=Args.lr * 1e-3)
+        scheduler = optim.lr_scheduler.SequentialLR(optimizer, [warm, main], milestones=[warmup])
+
+        return scheduler, False
+
+    elif name == "plateau":
+
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=5, min_lr=Args.lr * 1e-3)
+
+        return scheduler, True
+
+    elif name == "none":
+
+        return None, False
+
+    else:
+
+        raise Exception(f"Scheduler `{name}` unknown. Choose cosine, plateau or none.")
 
 
 
@@ -179,6 +213,12 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
 
         # Show epoch
         lrates[epoch] = optimizer.state_dict()['param_groups'][0]['lr']
+
+        # Update learning rate for the next epoch
+        if Args.scheduler is not None:
+            if Args.sched_on_loss : Args.scheduler.step(valid_loss)
+            else                  : Args.scheduler.step()
+
         print(f"Epoch [{epoch+1}/{Args.epochs}], loss train = {c.g}{train_loss:.6f}{c.d}, val loss = {c.r}{valid_loss:.6f}{c.d} | LR={c.y}{lrates[epoch]:.2e}{c.d}")
         with open(f"{Args.output.epoch_here}/INFO - epoch {epoch+1} - {Args.epochs} - {train_loss:.6f} , {valid_loss:.6f}", "wb") as f : pass
 
@@ -186,7 +226,8 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
         if valid_loss < best_val_loss:
 
             best_val_loss = valid_loss
-            best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss}
+            #best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss}
+            best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "scheduler_state_dict": Args.scheduler.state_dict() if Args.scheduler is not None else None, "best_val_loss": best_val_loss}
 
         # save loss
         valid_list_loss[epoch] = valid_loss
@@ -242,6 +283,9 @@ if __name__ == "__main__":
     if   optim_name == "Adam"  : optimizer = optim.Adam(model.parameters(), lr=Args.lr)
     elif optim_name == "AdamW" : optimizer = optim.AdamW(model.parameters(), lr=Args.lr)
     else : raise Exception(f"{c.r}The optimizer `optim_name` unknow. Please select Adam or AdamW.")
+
+    ### Define scheduler
+    Args.scheduler, Args.sched_on_loss = load_scheduler(optimizer, Args)
 
 
 
@@ -321,7 +365,8 @@ if __name__ == "__main__":
     print(f"{c.ly}INFO : Train                            : {c.d}{c.y}{Args.train}{c.d}")
     print(f"{c.ly}INFO : Valid                            : {c.d}{c.y}{Args.valid}{c.d}")
     print(f"{c.ly}INFO : Epoch                            : {c.d}{c.y}{Args.epochs}{c.d}")
-    print(f"{c.ly}INFO : Lrate                            : {c.d}{c.y}{Args.lr}{c.d}")
+    print(f"{c.ly}INFO : Lrate (initial)                  : {c.d}{c.y}{Args.lr}{c.d}")
+    print(f"{c.ly}INFO : Scheduler                        : {c.d}{c.y}{getattr(Args, 'sched', 'cosine')}{c.d}")
     print(f"{c.ly}INFO : batch size                       : {c.d}{c.y}{batch_size}{c.d}")
     print(f"{c.ly}INFO : Number of parameters             : {c.d}{c.y}{sum(p.numel() for p in model.parameters() if p.requires_grad) / 10**6:.2f} millions{c.d}")
 
