@@ -274,10 +274,12 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
 
 
     # on démarre l'HTML, puis on commence l'entête
-    html = '<head>\n  <meta charset="UTF-8"/>\n</head>\n<table border="1" style="border-collapse: collapse; text-align: center; table-layout: fixed; width: 100%;">\n'
+    html = '<head>\n  <meta charset="UTF-8"/>\n</head>\n<table border="1" style="border-collapse: collapse; text-align: center;">\n'
     html += '  <tr>\n    <th></th>'  # Coin supérieur gauche vide
-    for col in colonnes:
-        html += f'\n    <th> {col} </th>'
+    for col in colonnes[:-2]:
+        html += f'\n    <th style="width: 150px;"> {col.replace("test", "")} </th>'
+    for col in colonnes[-2:]:
+        html += f'\n    <th style="width: 50px;"> {col.replace("test", "")} </th>'
     html += '\n  </tr>\n'
 
 
@@ -417,7 +419,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                 y[i, m, -3] = mom
                 e[i, m, -3] = soa
                 if score == "L1"     : x[i, m, -3] = f"{mom:.1f} ± {soa:.1f}"
-                elif score == "chi2" : x[i, m, -3] = f"{mom:.3f} ± {soa:.3f}"
+                elif score == "chi2" : x[i, m, -3] = f"{mom:.2f} ± {soa:.2f}"
                 else : raise Exception(f"Score {score} unknow")
 
 
@@ -434,7 +436,7 @@ def make_score(score_type, models, tests, seed4spectractor):
             order_norma = order / (nb_m-1) * 100
 
             y[i, :, -1] = order_norma + 100
-            x[i, :, -1] = [f"{o:.1f} %" for o in order_norma]
+            x[i, :, -1] = [f"{o:.0f} %" for o in order_norma]
 
             y[i, :, -2] = order_norma + 100
             x[i, :, -2] = [f"{1+o:.0f}" for o in order]
@@ -449,7 +451,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                 for i, typeScore in enumerate(["classic", "norma"]):
 
                     html_codes.append(f"\n\n<h2>{typeScore}</h2>")
-                    html_codes.append(generate_html_table(tests+["Total", "Classement (N)", "Classement (%)"], models, x[i], y[i], e[i], sorting=sorting, title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}"))
+                    html_codes.append(generate_html_table(tests+["Total", "Num", ""], models, x[i], y[i], e[i], sorting=sorting, title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}"))
 
                 f.write('\n'.join(html_codes))
 
