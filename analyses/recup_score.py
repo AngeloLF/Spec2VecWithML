@@ -118,16 +118,17 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
             plt.scatter(i-di0+di*(j+1), yj, color=models_colors[modeli][1], marker="+")
             plt.plot([i-di0+di*(j+1)]*2, [yminj, ymaxj], color=models_colors[modeli][1])
 
-    if spectractor_scores is not None:
+    if spectractor_scores is not None and not np.isnan(spectractor_scores[0]) and spectractor_scores[0] != np.inf:
 
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
-        plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
+        if spectractor_scores[2] - spectractor_scores[1] > 1e-6:
+            plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
         plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
+        plt.legend()
 
     plt.xticks(np.arange(len(r)), r, rotation=90)
     plt.title(title)
-    plt.legend()
     plt.tight_layout()
     if savefig_name is not None:
         plt.savefig(savefig_name)
@@ -188,20 +189,22 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
 
         for j, (yj, ystdj) in enumerate(zip(*r2s[ri])):
 
-            plt.scatter(i-di0+di*(j+1), yj, color=models_colors[modeli][1], marker="+")
-            plt.errorbar([i-di0+di*(j+1)], yj, yerr=ystdj, color=models_colors[modeli][1])
+            if not np.isnan(yj) and yj != np.inf:
 
-    if spectractor_scores is not None:
+                plt.scatter(i-di0+di*(j+1), yj, color=models_colors[modeli][1], marker="+")
+                plt.errorbar([i-di0+di*(j+1)], yj, yerr=ystdj, color=models_colors[modeli][1])
+
+    if spectractor_scores is not None and not np.isnan(spectractor_scores[0]) and spectractor_scores[0] != np.inf:
 
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
         plt.axhspan(max(0, spectractor_scores[0]-spectractor_scores[1]), spectractor_scores[0]+spectractor_scores[1], color="k", alpha=0.5)
         plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
+        plt.legend()
 
     plt.xticks(np.arange(len(r)), r, rotation=90)
     plt.title(title)
     plt.ylabel(col)
-    plt.legend()
     plt.tight_layout()
     if savefig_name is not None:
         plt.savefig(savefig_name)
@@ -260,7 +263,7 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
         "near_max" : 'td style="background-color: #FF6666;"',
         "max" : 'td style="background-color: #CC0000; font-weight: bold;"',
 
-        "nan" : 'td style="background-color: #000000;"',
+        "nan"   : 'td style="background-color: #888888;"',
     }
 
 
@@ -270,7 +273,7 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
 
 
     # on démarre l'HTML, puis on commence l'entête
-    html = '<table border="1" style="border-collapse: collapse; text-align: center;">\n'
+    html = '<head>\n  <meta charset="UTF-8"/>\n</head>\n<table border="1" style="border-collapse: collapse; text-align: center;">\n'
     html += '  <tr>\n    <th></th>'  # Coin supérieur gauche vide
     for col in colonnes:
         html += f'\n    <th> {col} </th>'
@@ -385,7 +388,20 @@ def make_score(score_type, models, tests, seed4spectractor):
 
                 elif test.split("-")[-1] == seed_detected:
 
-                    print(f"{c.lk}        - Not find : {path_analyse}/{score}/{model}/{test}/resume.txt{c.d}")
+
+                    if model in os.listdir(f"results/output_simu/{test}") and len(os.listdir(f"results/output_simu/{test}/{model}")) > 1:
+
+                        x[0, m, t] = "Not analyse"
+                        x[1, m, t] = "Not analyse"
+                        print(f"{c.lk}        - Not analyse find : {path_analyse}/{score}/{model}/{test}/resume.txt{c.d}")
+
+                    else:
+
+                        x[0, m, t] = "Not apply"
+                        x[1, m, t] = "Not apply"
+                        print(f"{c.lk}        - Not apply find : results/output_simu/{test}/{model}{c.d}")
+
+
 
                 else:
 
@@ -425,7 +441,7 @@ def make_score(score_type, models, tests, seed4spectractor):
 
         for sorting, sorting_str in [(False, ""), (True, "_sorting")]:
 
-            with open(f"{path_resume}/html/{score}{sorting_str}.html", "w") as f:
+            with open(f"{path_resume}/html/{score}{sorting_str}.html", "w", encoding="utf-8") as f:
 
                 html_codes = [f"<h1>Score {score}</h1>"]
 

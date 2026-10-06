@@ -29,11 +29,12 @@ import utils_spec.psf_func as pf
 
 
 
+
 def printinfo(msg, color=c.g, ret=0):
 
     tabulation = '\n'*ret
-
     print(f"{tabulation}{color}INFO [apply_spectractor.py] {msg}{c.d}")
+
 
 
 
@@ -147,7 +148,6 @@ def apply_spectractor(testname, pathtest="./results/output_simu", makeonly=None,
     header["ROTPA"] = 270 - hp["OBS_CAMERA_ROTATION"] # hp["OBS_CAMERA_ROTATION"] - hp["OBS_CAMERA_RA_FLIP_SIGN"] * par_angle
 
     printinfo(f"ROTPA et par_angle : {header['ROTPA']}, {par_angle}")
-
     xt = np.arange(hp["LAMBDA_MIN"], hp["LAMBDA_MAX"], hp["LAMBDA_STEP"])
 
 

@@ -80,10 +80,10 @@ def compute_score_chi2(true, pred, sim, num_spec_str, Cread, gain, SpectractorPr
     score = np.sum(np.abs(chi2eq)) / N
 
     # norm
-
     residus_n = true_simu - pred_simu_n
     chi2eq_n = residus_n**2 / (sigma_READ**2 + true_simu / gain) * np.sign(residus_n)
     score_n = np.sum(np.abs(chi2eq_n)) / N
+
 
     # reduc for spectractor
     if Args.model == "Spectractor" and score > 20 and SpectractorProcess:
@@ -409,7 +409,6 @@ def open_fold(args, paths, folds, nb_level=20):
             pred = np.zeros_like(true) * np.nan
 
         res["flux"][i] = np.sum(true) / hp["CCD_GAIN"] # e- / (e-/ADU) = flux in ADU
-
         result = compute_score(Args.score, true, pred, sim, num_spec_str, hp["cparams"]["CCD_READ_OUT_NOISE"], hp["CCD_GAIN"])
 
         res["classic"][i] = result['score']
@@ -453,6 +452,7 @@ def open_fold(args, paths, folds, nb_level=20):
 
 
 
+
     # FIGURE hist_score
     plt.figure(figsize=(12, 8))
     vmin = min(np.nanmin(res["classic"]), np.nanmin(res["norma"]))
@@ -469,7 +469,6 @@ def open_fold(args, paths, folds, nb_level=20):
 
 
     
-
     # 10 exemple of scores
     """
     for mode in ["classic", "norma"]:
@@ -685,6 +684,8 @@ if __name__ == "__main__":
         with open(f"{Paths.save}/remember_score_{rtype}.txt", "w") as f:
             f.write(remember_file)
 
+        print(rscore)
+
 
 
     # make plots ..
@@ -797,7 +798,7 @@ if __name__ == "__main__":
 
             true_res = np.copy(res[mode])[~np.isnan(res[mode])]
 
-            pc = 0.05
+            pc = 0.01
             args = np.argsort(true_res)
             imin, imax = int(len(args)*pc), int(len(args)*(1-pc))
 
