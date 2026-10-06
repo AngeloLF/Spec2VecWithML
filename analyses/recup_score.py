@@ -111,7 +111,7 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
         plt.scatter(i-di0, si, color=models_colors[modeli][0])
 
         if i == 0:
-            title += f" [best {ri} with {si:.4f}]"
+            title += f" [best {ri} with {si:.3f}]"
 
         for j, (yj, yminj, ymaxj) in enumerate(zip(*r2s[ri])):
 
@@ -124,7 +124,7 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
         x1 = np.ones(len(r))
         if spectractor_scores[2] - spectractor_scores[1] > 1e-6:
             plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
-        plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.4f}")
+        plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.3f}")
         plt.legend()
 
     plt.xticks(np.arange(len(r)), r, rotation=90)
@@ -380,7 +380,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                         e[i, m, t] = std
                         x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
                         if score == "L1"     : x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
-                        elif score == "chi2" : x[i, m, t] = f"{mean:.4f} ± {std:.4f}"
+                        elif score == "chi2" : x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
                         else : raise Exception(f"Score {score} unknow")
 
                         tot_mean[i].append(mean)
