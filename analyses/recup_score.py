@@ -254,17 +254,17 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
 
     # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
     tds = {
-        "def" : "td",
+        "def" : "",
             
-        "far_min" : 'td style="background-color: #CCFFCC;"',
-        "near_min" : 'td style="background-color: #66FF66;"',
-        "min" : 'td style="background-color: #00CC00; font-weight: bold;"',
+        "far_min" : 'background-color: #CCFFCC;',
+        "near_min" : 'background-color: #66FF66;',
+        "min" : 'background-color: #00CC00; font-weight: bold;',
 
-        "far_max" : 'td style="background-color: #FFCCCC;"',
-        "near_max" : 'td style="background-color: #FF6666;"',
-        "max" : 'td style="background-color: #CC0000; font-weight: bold;"',
+        "far_max" : 'background-color: #FFCCCC;',
+        "near_max" : 'background-color: #FF6666;',
+        "max" : 'background-color: #CC0000; font-weight: bold;',
 
-        "nan"   : 'td style="background-color: #888888;"',
+        "nan"   : 'background-color: #888888;',
     }
 
 
@@ -277,9 +277,16 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
     html = '<head>\n  <meta charset="UTF-8"/>\n</head>\n<table border="1" style="border-collapse: collapse; text-align: center;">\n'
     html += '  <tr>\n    <th></th>'  # Coin supérieur gauche vide
     for col in colonnes[:-2]:
-        html += f'\n    <th style="width: 150px;"> {col.replace("test", "")} </th>'
+
+        if col != "Total":
+            html += f'\n    <th style="width: 150px;"> {col.replace("test", "")} </th>'
+        else:
+            html += f'\n    <th style="width: 150px; border-left: 4px double black;"> {col} </th>'
+
     for col in colonnes[-2:]:
+
         html += f'\n    <th style="width: 50px;"> {col.replace("test", "")} </th>'
+    
     html += '\n  </tr>\n'
 
 
@@ -300,23 +307,32 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
 
     # Lignes de données
     for i, ligne in enumerate(lignes):
+
         html += f'  <tr>\n    <th> {ligne} </th>'
-        for j in range(len(colonnes)):
 
-            if   i == argmin[j] : td = tds["min"]
-            elif i == argmax[j] : td = tds["max"]
-            elif y[i, j] < valmin[j] * 1.2 : td = tds["near_min"]
-            elif y[i, j] < valmin[j] * 1.5 : td = tds["far_min"]
-            elif y[i, j] < valmin[j] / 1.5 : td = tds["far_max"] 
-            elif y[i, j] > valmax[j] / 1.2 : td = tds["near_max"] 
-            else : td = tds["def"]
+        for j, col in enumerate(colonnes):
 
-            if np.isnan(buffer_y[i, j]) : td = tds["nan"]
+            style2add = list()
 
-            html += f'\n    <{td}>{text[i, j]}</td>'
+            # si la colonne est 'Total', alors on fait un double trait a gauche
+            if col == "Total":
+                style2add.append("border-left: 4px double black;")
+
+            if np.isnan(buffer_y[i, j]) : style2add.append(tds["nan"])
+            elif i == argmin[j] : style2add.append(tds["min"])
+            elif i == argmax[j] : style2add.append(tds["max"])
+            elif y[i, j] < valmin[j] * 1.2 : style2add.append(tds["near_min"])
+            elif y[i, j] < valmin[j] * 1.5 : style2add.append(tds["far_min"])
+            elif y[i, j] < valmin[j] / 1.5 : style2add.append(tds["far_max"])
+            elif y[i, j] > valmax[j] / 1.2 : style2add.append(tds["near_max"])
+            else : pass
+
+            html += f'\n    <td style="{' '.join(style2add)}"> {text[i, j]} </td>'
+
         html += '\n  </tr>\n'
     
     html += '</table>'
+
     return html
 
 
