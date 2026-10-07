@@ -35,7 +35,7 @@ def recup_mt(scores, mode="dispo"):
         models += [m for m in os.listdir(f"./results/analyse/{score}") if not "." in m]
 
         for model in models:
-            tests += [t.split("-")[0] for t in os.listdir(f"./results/analyse/{score}/{model}") if not "." in t]
+            tests += [t.split("-")[0] for t in os.listdir(f"./results/analyse/{score}/{model}") if not "." in t] # on retire la seed du label du test
 
     return list(set(models)), list(set(tests))
 
@@ -123,7 +123,7 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
         if spectractor_scores[2] - spectractor_scores[1] > 1e-6:
-            #plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
+            # plt.fill_between(xs, x1*spectractor_scores[1], x1*spectractor_scores[2], color="k")
             plt.axhspan(spectractor_scores[1], spectractor_scores[2], color="k", alpha=0.2)
         plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.3f}")
         plt.legend()
@@ -216,7 +216,7 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
 
 
 
-def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.', title="<title>", savefig_name=None, markers=None, colors=None, absSorting=False):
+def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.', score="---", typeScore="---", path_graph=f"results/analyse/graph", markers=None, colors=None, absSorting=False):
 
     """
         Créer le fichier HTML pour visualiser la les scores produit par les analyses.
@@ -246,10 +246,10 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
         min_scores = np.nanmin(ynan[:, :-3], axis=1)
         max_scores = np.nanmax(ynan[:, :-3], axis=1)
 
-        general_plot(lignes, mean_scores, min_scores, max_scores, title=title, savefig_name=savefig_name+".png")
+        general_plot(lignes, mean_scores, min_scores, max_scores, title=f"Score {score} ({typeScore})", savefig_name=f"{path_graph}/{score}_{typeScore}.png")
 
         for i, col in enumerate(colonnes[:-3]):
-            oneTest_plot(col, lignes, y[:, i], e[:, i]/2, title=title, savefig_name=savefig_name+" "+col+".png")
+            oneTest_plot(col, lignes, y[:, i], e[:, i]/2, title=f"Score {score} ({typeScore})", savefig_name=f"{path_graph}/{score}_{typeScore}/{col}.png")
 
 
     # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
@@ -354,6 +354,11 @@ def make_score(score_type, models, tests, seed4spectractor):
         # Sorting lists
         models.sort()
 
+        l = np.zeros(len(models)) + np.inf
+        lstr = np.zeros(len(models)).astype(str)
+        lstr[:] = '---'
+        all_loss_str = list()
+
         y = np.zeros((2, len(models), len(tests)+3)) + np.inf
         e = np.zeros((2, len(models), len(tests)+3)) + np.inf
         x = np.zeros((2, len(models), len(tests)+3)).astype(str)
@@ -363,10 +368,26 @@ def make_score(score_type, models, tests, seed4spectractor):
         # iteration sur les models 
         for m, model in enumerate(models):
 
+            _, model_str, loss_str, train_str, lr_str, *_ = model.split("_")
+            if loss_str not in all_loss_str and loss_str != "x" : all_loss_str.append(loss_str)
+
+
+            # remember loss & seed recup
             if "Spectractor" in model:
+
+                l[m] = np.nan
+
                 seed_detected = seed4spectractor
+
             else:
-                seed_detected = model.split("_")[3].split("-")[-1]
+
+                loss_npy = f"results/models_output/{model_str}_{loss_str}/loss/{train_str}_{lr_str}.npy"
+                loss_best = np.min(np.load(loss_npy))
+                l[m] = loss_best
+                lstr[m] = loss_str
+
+                seed_detected = train_str.split("-")[-1]
+
 
             print(f"    {c.lm}* model {model} {c.m}[seed:{seed_detected}]{c.d}")
             tot_mean = [list(), list()]
@@ -440,6 +461,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                 else : raise Exception(f"Score {score} unknow")
 
 
+        # classic and norma
         for i in range(2):
 
             y[i, :, -3][np.isnan(y[i, :, -3])] = np.inf
@@ -468,7 +490,29 @@ def make_score(score_type, models, tests, seed4spectractor):
                 for i, typeScore in enumerate(["classic", "norma"]):
 
                     html_codes.append(f"\n\n<h2>{typeScore}</h2>")
-                    html_codes.append(generate_html_table(tests+["Total", "Num", ""], models, x[i], y[i], e[i], sorting=sorting, title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}"))
+                    html_codes.append(generate_html_table(tests+["Total", "Num", ""], models, x[i], y[i], e[i], sorting=sorting, score=score, typeScore=typeScore, path_graph=f"{path_resume}/graph"))#title=f"Score {score} ({typeScore})", savefig_name=f"{path_resume}/graph/{score}_{typeScore}"))
+
+                    # loss_plots
+                    for t, test_without_seeds in enumerate(tests):
+
+                        for li in all_loss_str:
+
+                            os.makedirs(f"{path_resume}/graph/{score}_loss/{li}", exist_ok=True)
+
+                            mask_loss = (lstr == li)
+
+                            plt.figure(figsize=(16, 12))
+
+                            plt.plot(l[mask_loss], y[i, :, t][mask_loss], ls="", marker="+", c="r")
+                            plt.xlabel(f"Best loss")
+                            plt.ylabel(f"Score {score} [{typeScore}]")
+
+                            plt.tight_layout()
+                            plt.savefig(f"{path_resume}/graph/{score}_loss/{li}/{typeScore} {test_without_seeds}.png")
+                            plt.close()
+
+
+
 
                 f.write('\n'.join(html_codes))
 
@@ -492,6 +536,11 @@ if __name__ == "__main__":
     os.makedirs(path_resume, exist_ok=True)
     os.makedirs(f"{path_resume}/graph", exist_ok=True)
     os.makedirs(f"{path_resume}/html", exist_ok=True)
+    for st in score_type:
+        os.makedirs(f"{path_resume}/graph/{st}_classic", exist_ok=True)
+        os.makedirs(f"{path_resume}/graph/{st}_norma", exist_ok=True)
+        os.makedirs(f"{path_resume}/graph/{st}_loss", exist_ok=True)
+
 
     models, tests = recup_mt(score_type, seed4spectractor)
     print(f"{c.y}INFO : finding models : ", ", ".join(models), c.d)

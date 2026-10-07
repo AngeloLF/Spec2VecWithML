@@ -147,8 +147,10 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
         ### Training 
 
         train_loss = 0.0
+        """
         train_loss_mse = 0.0
         train_loss_chi2 = 0.0
+        """
 
         for images, spectra in tqdm(train_loader, desc=f"Epoch {epoch+1}/{Args.epochs} (Train)"):
 
@@ -164,17 +166,21 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
             optimizer.step()
             train_loss += loss.item() * images.size(0)
 
+            """
             # Evaluate with mse and chi2 loss
             model.eval()
             train_loss_mse += mse_loss(outputs, spectra) * images.size(0)
             train_loss_chi2 += chi2_loss(outputs, spectra) * images.size(0)
+            """
 
 
 
-        train_loss = train_loss / len(train_loader)
+        train_loss = train_loss / len(train_loader.dataset)
         train_list_loss[epoch] = train_loss
-        train_list_loss_mse[epoch] = train_loss_mse / len(train_loader)
-        train_list_loss_chi2[epoch] = train_loss_chi2 / len(train_loader)
+        """
+        train_list_loss_mse[epoch] = train_loss_mse / len(train_loader.dataset)
+        train_list_loss_chi2[epoch] = train_loss_chi2 / len(train_loader.dataset)
+        """
 
         # Predict of first train
         model.eval()
@@ -186,8 +192,10 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
 
         model.eval()
         valid_loss = 0.0
+        """
         valid_loss_mse = 0.0
         valid_loss_chi2 = 0.0
+        """
         
         with torch.no_grad():
 
@@ -200,13 +208,16 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
                 loss = loss_function(outputs, spectra)
                 valid_loss += loss.item() * images.size(0)
 
+                """
                 # Evaluate with mse and chi2 loss
                 model.eval()
                 valid_loss_mse += mse_loss(outputs, spectra) * images.size(0)
                 valid_loss_chi2 += chi2_loss(outputs, spectra) * images.size(0)
+                """
 
-        valid_loss = valid_loss / len(valid_loader)
-        # Predict of first train
+        valid_loss = valid_loss / len(valid_loader.dataset)
+
+        # Predict of first valid
         model.eval()
         pred_valid0 = model(Args.valid0_img).cpu().detach().numpy()[0]
         np.save(f"{Args.output.evolution_here}/valid_{epoch}.npy", pred_valid0)
@@ -231,17 +242,16 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
 
         # save loss
         valid_list_loss[epoch] = valid_loss
-        valid_list_loss_mse[epoch] = valid_loss_mse / len(valid_dataset)
-        valid_list_loss_chi2[epoch] = valid_loss_chi2 / len(valid_dataset)
+        """
+        valid_list_loss_mse[epoch] = valid_loss_mse / len(valid_loader.dataset)
+        valid_list_loss_chi2[epoch] = valid_loss_chi2 / len(valid_loader.dataset)
+        """
 
 
 
     # dict of statistiques
-    run_stats = {
-        "train" : train_list_loss, "train_mse" : train_list_loss_mse,
-        "valid" : valid_list_loss, "valid_mse" : valid_list_loss_mse,
-        "lrates" : lrates
-    }
+    #run_stats = {"train" : train_list_loss, "train_mse" : train_list_loss_mse, "valid" : valid_list_loss, "valid_mse" : valid_list_loss_mse, "lrates" : lrates}
+    run_stats = {"train" : train_list_loss, "valid" : valid_list_loss, "lrates" : lrates}
 
     return best_state, run_stats
 
@@ -390,7 +400,7 @@ if __name__ == "__main__":
     # Saving loss
     print(f"{c.lm}INFO : Save losses (& plots) ... {c.d}")
     np.save(f"{Args.output.loss}/{Args.train_name}.npy", np.array((run_stats["train"], run_stats["valid"])))
-    np.save(f"{Args.output.loss_mse}/{Args.train_name}.npy", np.array((run_stats["train_mse"], run_stats["valid_mse"])))
+    #np.save(f"{Args.output.loss_mse}/{Args.train_name}.npy", np.array((run_stats["train_mse"], run_stats["valid_mse"])))
 
     plt.figure(figsize=(16, 9))
     plt.plot(np.arange(1, Args.epochs+1), run_stats["train"], c="k", label="Train loss")
