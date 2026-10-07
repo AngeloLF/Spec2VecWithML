@@ -542,6 +542,7 @@ def make_score(score_type, models, tests, seed4spectractor):
 
                             plt.xlabel(f"Best loss")
                             plt.ylabel(f"Score {score} [{typeScore}]")
+                            plt.yscale("log")
                             plt.title(f"Loss {li} for score {score} [{typeScore}] in {test_without_seeds}")
                             plt.tight_layout()
                             plt.legend()
