@@ -29,7 +29,18 @@ lrs_markers = {
 
 
 
-def recup_mt(scores, mode="dispo"):
+def is_valid_model(ARGV, model):
+
+    _, model_str, loss_str, train_str, lr_str, *_ = model.split("_")
+    seed_str= train_str.split("-")[-1]
+
+    return not (model_str in ARGV.xmodel or seed_str in ARGV.xseed or "." in model_str)
+
+def is_valid_test(ARGV, test):
+
+    return not ("." in test or test in ARGV.xtest)
+
+def recup_mt(ARGV):
 
     """
         Recupere les noms de modèles et tests
@@ -38,14 +49,32 @@ def recup_mt(scores, mode="dispo"):
     models = [f"pred_Spectractor_x_x_0e+00"]
     tests = list()
 
-    for score in scores:
+    for score in ARGV.score_type:
 
-        models += [m for m in os.listdir(f"./results/analyse/{score}") if not "." in m]
+        models += [m for m in os.listdir(f"./results/analyse/{score}") if "." not in m]
 
         for model in models:
-            tests += [t.split("-")[0] for t in os.listdir(f"./results/analyse/{score}/{model}") if not "." in t] # on retire la seed du label du test
+            tests += [t.split("-")[0] for t in os.listdir(f"./results/analyse/{score}/{model}") if "." not in t] # on retire la seed du label du test
 
-    return list(set(models)), list(set(tests))
+    # selection models
+    models_retenu = list()
+    for m in set(models):
+
+        if is_valid_model(ARGV, m):
+            models_retenu.append(m)
+        else:
+            print(f"{c.ly}INFO : Model not recup : {m}{c.d}")
+
+    # selection tests
+    tests_retenu = list()
+    for t in set(tests):
+
+        if is_valid_test(ARGV, t):
+            tests_retenu.append(t)
+        else:
+            print(f"{c.ly}INFO : Test not recup : {t}{c.d}")
+
+    return models_retenu, tests_retenu
 
 
 
@@ -560,11 +589,61 @@ def make_score(score_type, models, tests, seed4spectractor):
 
 
 if __name__ == "__main__":
+    """
 
-    seed4spectractor = sys.argv[1]
-    print(f"Seed choose for Spectractor : {seed4spectractor}")
+    ARGV needed:
+        * specseed : seed use for Spectractor scores
 
-    score_type = ["L1", "chi2"]
+    ARGV option:
+        * score_type : list of score type to compute (seperate with `,`)(def : L1,chi2)
+        * xtest : list of test to not recup (seperate with `,`)
+        * xseed : list of seed to not recup (seperate with `,`)
+        * xmodel : list of model to not recup (seperate with `,`) 
+
+    """
+
+
+    # read argv
+    ARGS = SimpleNamespace(_argx=list(), xtest=list(), xmodel=list(), xseed=list(), score_type=["L1", "chi2"])
+    arg2split = ["xtest", "xseed", "xmodel"]
+    argv = sys.argv[1:]
+
+    for arg in argv:
+
+        if "=" in arg:
+
+            k, v = arg.split("=")
+
+            if k in arg2split : ARGS.__setattr__(k, v.split(","))
+            else : ARGS.__setattr__(k, v) 
+
+        else:
+
+            ARGS._argx.append(arg)
+
+
+    # models & tests 
+    models, tests = recup_mt(ARGS)
+
+    if len(models) == 0 or len(models) == 1 and "Spectractor" in models[0]:
+        print(f"{c.r}ERROR : no models find{c.d}")
+        sys.exit()
+
+    if len(models) == 0:
+        print(f"{c.r}ERROR : no test find{c.d}")
+        sys.exit()
+
+    print(f"{c.y}INFO : finding models : ", ", ".join(models), c.d)
+    print(f"{c.y}INFO : finding tests folders : ", ", ".join(tests), c.d)
+
+
+    # seed for spectractor
+    if "specseed" not in dir(ARGS):
+        raise Exception(f"Need specseed argv, for the choosen seed for Spectractor scores")
+    else:
+        seed4spectractor = ARGS.specseed
+        print(f"Seed choose for Spectractor : {seed4spectractor}")
+
     path_analyse = f"./results/analyse"
     path_resume = f"{path_analyse}/all_resume"
 
@@ -572,17 +651,15 @@ if __name__ == "__main__":
     os.makedirs(path_resume, exist_ok=True)
     os.makedirs(f"{path_resume}/graph", exist_ok=True)
     os.makedirs(f"{path_resume}/html", exist_ok=True)
-    for st in score_type:
+    for st in ARGS.score_type:
         os.makedirs(f"{path_resume}/graph/{st}_classic", exist_ok=True)
         os.makedirs(f"{path_resume}/graph/{st}_norma", exist_ok=True)
         os.makedirs(f"{path_resume}/graph/{st}_loss", exist_ok=True)
 
 
-    models, tests = recup_mt(score_type, seed4spectractor)
-    print(f"{c.y}INFO : finding models : ", ", ".join(models), c.d)
-    print(f"{c.y}INFO : finding tests folders : ", ", ".join(tests), c.d)
+    
 
-    make_score(score_type, models, tests, seed4spectractor)
+    make_score(ARGS.score_type, models, tests, seed4spectractor)
 
 
 
