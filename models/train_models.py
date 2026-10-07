@@ -237,7 +237,6 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
         if valid_loss < best_val_loss:
 
             best_val_loss = valid_loss
-            #best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "best_val_loss": best_val_loss}
             best_state = {"epoch": epoch + 1, "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(), "scheduler_state_dict": Args.scheduler.state_dict() if Args.scheduler is not None else None, "best_val_loss": best_val_loss}
 
         # save loss
@@ -271,6 +270,7 @@ if __name__ == "__main__":
 
     ### capture params
     Args = get_argv(sys.argv[1:], prog="training")
+    Args.sched = "none"
 
 
 
