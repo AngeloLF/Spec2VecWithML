@@ -538,7 +538,7 @@ def make_score(score_type, models, tests, seed4spectractor):
 
                             # legend for models
                             for lru in np.unique(lrstr[mask_loss]):
-                                plt.scatter(None, None, color="k", marker=lrs_markers[lru], label=lru)
+                                plt.scatter(None, None, color="k", marker=lrs_markers[lru], label=f"LR={lru}")
 
                             plt.xlabel(f"Best loss")
                             plt.ylabel(f"Score {score} [{typeScore}]")
