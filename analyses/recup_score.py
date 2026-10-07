@@ -18,6 +18,13 @@ models_colors = {
     "SotSuv2" : ["#00cccc", "#33ffff"],
 }
 
+seeds_markers = {
+    "413" : "o",
+    "159" : "s",
+    "265" : "v",
+    "666" : "*",
+}
+
 
 
 
@@ -177,11 +184,16 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
     r = r[args]
     s = s[args]
 
+    # remember model for legend
+    models_use = list()
+
     plt.figure(figsize=(16, 12))
 
+    # plots model scores
     for i, (ri, si) in enumerate(zip(r, s)):
 
         modeli = ri.split(" ")[0]
+        if modeli not in models_use : models_use.append(modeli)
 
         plt.scatter(i-di0, si, color=models_colors[modeli][0])
 
@@ -195,17 +207,22 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
                 plt.scatter(i-di0+di*(j+1), yj, color=models_colors[modeli][1], marker="+")
                 plt.errorbar([i-di0+di*(j+1)], yj, yerr=ystdj, color=models_colors[modeli][1])
 
+    # plots Spectractor score if avaiable
     if spectractor_scores is not None and not np.isnan(spectractor_scores[0]) and spectractor_scores[0] != np.inf:
 
         xs = np.arange(len(r))
         x1 = np.ones(len(r))
         plt.axhspan(max(0, spectractor_scores[0]-spectractor_scores[1]), spectractor_scores[0]+spectractor_scores[1], color="k", alpha=0.2)
         plt.axhline(spectractor_scores[0], color="k", label=f"Spectractor with {spectractor_scores[0]:.3f}")
-        plt.legend()
+
+    # legend for models
+    for mu in models_use:
+        plt.scatter(None, None, color=models_colors[mu][0], label=mu)
 
     plt.xticks(np.arange(len(r)), r, rotation=90)
     plt.title(title)
     plt.ylabel(col)
+    plt.legend()
     plt.tight_layout()
     if savefig_name is not None:
         plt.savefig(savefig_name)
@@ -357,6 +374,10 @@ def make_score(score_type, models, tests, seed4spectractor):
         l = np.zeros(len(models)) + np.inf
         lstr = np.zeros(len(models)).astype(str)
         lstr[:] = '---'
+        mstr = np.zeros(len(models)).astype(str)
+        mstr[:] = '---'
+        sstr = np.zeros(len(models)).astype(str)
+        sstr[:] = '---'
         all_loss_str = list()
 
         y = np.zeros((2, len(models), len(tests)+3)) + np.inf
@@ -375,18 +396,21 @@ def make_score(score_type, models, tests, seed4spectractor):
             # remember loss & seed recup
             if "Spectractor" in model:
 
-                l[m] = np.nan
-
                 seed_detected = seed4spectractor
 
+                l[m] = np.nan
+                sstr[m] = str(seed_detected)
+
             else:
+
+                seed_detected = train_str.split("-")[-1]
 
                 loss_npy = f"results/models_output/{model_str}_{loss_str}/loss/{train_str}_{lr_str}.npy"
                 loss_best = np.min(np.load(loss_npy))
                 l[m] = loss_best
                 lstr[m] = loss_str
-
-                seed_detected = train_str.split("-")[-1]
+                mstr[m] = model_str
+                sstr[m] = str(seed_detected)
 
 
             print(f"    {c.lm}* model {model} {c.m}[seed:{seed_detected}]{c.d}")
@@ -500,14 +524,27 @@ def make_score(score_type, models, tests, seed4spectractor):
                             os.makedirs(f"{path_resume}/graph/{score}_loss/{li}", exist_ok=True)
 
                             mask_loss = (lstr == li)
+                            colors = [models_colors[mi][0] for mi in mstr[mask_loss]]
+                            markers = [seeds_markers[si][0] for si in sstr[mask_loss]]
 
                             plt.figure(figsize=(16, 12))
 
-                            plt.plot(l[mask_loss], y[i, :, t][mask_loss], ls="", marker="+", c="r")
+                            for xi, yi, mi, ci in zip(l[mask_loss], y[i, :, t][mask_loss], markers, colors):
+                                plt.scatter(xi, yi, ls="", marker=mi, c=ci)
+
+                            # legend for models
+                            for mu in np.unique(mstr[mask_loss]):
+                                plt.scatter(None, None, color=models_colors[mu][0], marker=".", label=mu)
+
+                            # legend for models
+                            for su in np.unique(sstr[mask_loss]):
+                                plt.scatter(None, None, color="k", marker=seeds_markers[su], label=su)
+
                             plt.xlabel(f"Best loss")
                             plt.ylabel(f"Score {score} [{typeScore}]")
-
+                            plt.title(f"Loss {li} for score {score} [{typeScore}] in {test_without_seeds}")
                             plt.tight_layout()
+                            plt.legend()
                             plt.savefig(f"{path_resume}/graph/{score}_loss/{li}/{typeScore} {test_without_seeds}.png")
                             plt.close()
 
