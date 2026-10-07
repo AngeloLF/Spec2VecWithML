@@ -18,11 +18,12 @@ models_colors = {
     "SotSuv2" : ["#00cccc", "#33ffff"],
 }
 
-seeds_markers = {
-    "413" : "o",
-    "159" : "s",
-    "265" : "v",
-    "666" : "*",
+lrs_markers = {
+    "1e-04" : "o",
+    "5e-05" : "s",
+    "1e-05" : "v",
+    "5e-06" : "d",
+    "1e-06" : "*",
 }
 
 
@@ -376,8 +377,8 @@ def make_score(score_type, models, tests, seed4spectractor):
         lstr[:] = '---'
         mstr = np.zeros(len(models)).astype(str)
         mstr[:] = '---'
-        sstr = np.zeros(len(models)).astype(str)
-        sstr[:] = '---'
+        lrstr = np.zeros(len(models)).astype(str)
+        lrstr[:] = '---'
         all_loss_str = list()
 
         y = np.zeros((2, len(models), len(tests)+3)) + np.inf
@@ -399,7 +400,6 @@ def make_score(score_type, models, tests, seed4spectractor):
                 seed_detected = seed4spectractor
 
                 l[m] = np.nan
-                sstr[m] = str(seed_detected)
 
             else:
 
@@ -410,7 +410,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                 l[m] = loss_best
                 lstr[m] = loss_str
                 mstr[m] = model_str
-                sstr[m] = str(seed_detected)
+                lrstr[m] = lr_str
 
 
             print(f"    {c.lm}* model {model} {c.m}[seed:{seed_detected}]{c.d}")
@@ -525,7 +525,7 @@ def make_score(score_type, models, tests, seed4spectractor):
 
                             mask_loss = (lstr == li)
                             colors = [models_colors[mi][0] for mi in mstr[mask_loss]]
-                            markers = [seeds_markers[si][0] for si in sstr[mask_loss]]
+                            markers = [lrs_markers[lri][0] for lri in lrstr[mask_loss]]
 
                             plt.figure(figsize=(16, 12))
 
@@ -537,8 +537,8 @@ def make_score(score_type, models, tests, seed4spectractor):
                                 plt.scatter(None, None, color=models_colors[mu][0], marker=".", label=mu)
 
                             # legend for models
-                            for su in np.unique(sstr[mask_loss]):
-                                plt.scatter(None, None, color="k", marker=seeds_markers[su], label=su)
+                            for lru in np.unique(lrstr[mask_loss]):
+                                plt.scatter(None, None, color="k", marker=lrs_markers[lru], label=lru)
 
                             plt.xlabel(f"Best loss")
                             plt.ylabel(f"Score {score} [{typeScore}]")
@@ -547,8 +547,6 @@ def make_score(score_type, models, tests, seed4spectractor):
                             plt.legend()
                             plt.savefig(f"{path_resume}/graph/{score}_loss/{li}/{typeScore} {test_without_seeds}.png")
                             plt.close()
-
-
 
 
                 f.write('\n'.join(html_codes))
