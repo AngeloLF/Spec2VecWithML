@@ -16,6 +16,10 @@ models_colors = {
     "SCaMv2"  : ["#ff007f", "#ff66b2"],
     "SotSu"   : ["#0000ff", "#6666ff"],
     "SotSuv2" : ["#00cccc", "#33ffff"],
+
+    "SCaMD10" : ["#00ff00", "#22ff22"],
+    "SCaMD20" : ["#00bb00", "#22bb22"],
+    "SCaMD40" : ["#007700", "#227722"],
 }
 
 lrs_markers = {
