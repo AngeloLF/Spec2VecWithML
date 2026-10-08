@@ -26,10 +26,10 @@ def printinfo(msg, color=c.g, ret=0):
 # score = "chi2"
 
 # ARGV : test seed tel num
-if len(sys.argv) != 5:
+if len(sys.argv) < 5:
     raise Exception(f"Number of argv is not 4 (test, seed, tel, score)")
 else:
-    test, seed, tel, score = sys.argv[1:]
+    test, seed, tel, score = sys.argv[1:5]
 
 nb_show_min = 5
 nb_show_max = 5
@@ -63,8 +63,10 @@ if num != "":
 
 
     # IMPORTATION SPECTRACTOR
-    spectractor_version = "Spectractor"
-    specver = "Spectractor"
+    spectractor_version = "Spectractor" 
+    for argv in sys.argv:
+        if "=" in argv and argv.split("=")[0] == "specver":
+            spectractor_version = argv.split("=")[1]
     sys.path.append(f"./{spectractor_version}")
     from spectractor.extractor import extractor
     from spectractor.extractor.spectrum import Spectrum
@@ -107,7 +109,7 @@ if num != "":
 
 
     ### Select config
-    if f"{hp['telescope'].lower()}.ini" in os.listdir(f"./{specver}/config/"):
+    if f"{hp['telescope'].lower()}.ini" in os.listdir(f"./{spectractor_version}/config/"):
         configName = hp['telescope'].lower()
     elif "TEL_NAME" in hp.keys():
         configName = hp["TEL_NAME"]
@@ -115,7 +117,7 @@ if num != "":
         configName = "auxtel"
     else:
         configName = hp['telescope'].lower()
-    config = f"./{specver}/config/{configName}.ini"
+    config = f"./{spectractor_version}/config/{configName}.ini"
     print(f"Loading config : {config}")
 
 
@@ -175,8 +177,8 @@ if num != "":
         yperr = np.zeros_like(xt) * np.nan
         printinfo(f"Make nan yt ....", color=c.g)
 
-    times[n] = time() - t0
-    nbsok[n] = spectractor_ok
+    ftime = time() - t0
+    print(f"Extraction time : {ftime:.1f} sec")
 
     # save spectrum
     np.save(f"{spectrum_save}/spectrum_{num}.npy", yp)
