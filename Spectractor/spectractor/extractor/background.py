@@ -38,8 +38,7 @@ def remove_image_background_sextractor(data, sigma=3.0, box_size=(50, 50), filte
         plot_image_simple(ax[0], bkg.background, scale="lin")
         plot_image_simple(ax[1], data_wo_bkg, scale="symlog")
         fig.tight_layout()
-        if parameters.DISPLAY:
-            plt.show()
+        plt.show()
         if parameters.PdfPages:
             parameters.PdfPages.savefig()
     return data_wo_bkg

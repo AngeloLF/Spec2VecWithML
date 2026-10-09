@@ -506,11 +506,10 @@ class FitParameters:
         >>> params.cov = np.array([[1,-0.5,0],[-0.5,1,-1],[0,-1,1]])
         >>> params.plot_correlation_matrix()
         """
-        if parameters.DISPLAY or parameters.SAVE and self.filename != "" or parameters.LSST_SAVEFIGPATH:
-            ipar = self.get_free_parameters()
-            fig = plt.figure()
-            plot_correlation_matrix_simple(plt.gca(), self.rho, axis_names=[self.axis_names[i] for i in ipar])
-            fig.tight_layout()
+        ipar = self.get_free_parameters()
+        fig = plt.figure()
+        plot_correlation_matrix_simple(plt.gca(), self.rho, axis_names=[self.axis_names[i] for i in ipar])
+        fig.tight_layout()
         if (parameters.SAVE or parameters.LSST_SAVEFIGPATH) and self.filename != "":  # pragma: no cover
             figname = os.path.splitext(self.filename)[0] + "_correlation.pdf"
             fig.savefig(figname, dpi=100, bbox_inches='tight')
@@ -686,7 +685,6 @@ class FitWorkspace:
         >>> w.params.ndim
         5
         """
-        
         self.my_logger = set_logger(self.__class__.__name__)
         self.params = params
         self.epsilon = epsilon
@@ -789,9 +787,6 @@ class FitWorkspace:
             >>> assert x is not None
 
         """
-
-        print(f"Simulate of FitWorkspace")
-
         self.x = np.array([])
         self.model = np.array([])
         self.model_err = np.array([])
@@ -1097,9 +1092,6 @@ class FitWorkspace:
 
         """
         # check data format
-
-
-
         if (self.data.dtype != object and self.data.ndim > 1) or (self.err.dtype != object and self.err.ndim > 1):
             raise ValueError("Fitworkspace.data and Fitworkspace.err must be a flat 1D array,"
                              " or an array of flat arrays of unequal lengths.")
@@ -1613,7 +1605,8 @@ def simple_newton_minimisation(fit_workspace, niter=10, xtol=1e-3, ftol=1e-3):  
         plt.plot(r, js, label="J")
         plt.grid()
         plt.legend()
-        plt.show()
+        if parameters.DISPLAY:
+            plt.show()
 
         if parameters.DISPLAY:
             fig = plt.figure()
@@ -1688,7 +1681,7 @@ def run_simple_newton_minimisation(fit_workspace, xtol=1e-8, ftol=1e-8, niter=50
     return params_table, funcs
 
 
-def run_minimisation(fit_workspace, method="newton", xtol=1e-4, ftol=1e-4, niter=50,
+def run_minimisation(fit_workspace, method="newton", xtol=1e-4, ftol=1e-4, niter=100,
                      verbose=False, with_line_search=True, minimizer_method="L-BFGS-B"):
     my_logger = set_logger(__name__)
 
@@ -1778,7 +1771,7 @@ def run_minimisation(fit_workspace, method="newton", xtol=1e-4, ftol=1e-4, niter
 
 
 def run_minimisation_sigma_clipping(fit_workspace, method="newton", xtol=1e-4, ftol=1e-4,
-                                    niter=50, sigma_clip=5.0, niter_clip=3, verbose=False, with_line_search=True):
+                                    niter=100, sigma_clip=5.0, niter_clip=3, verbose=False, with_line_search=True):
     my_logger = set_logger(__name__)
     for step in range(niter_clip):
         if verbose:
@@ -1854,9 +1847,6 @@ class RegFitWorkspace(FitWorkspace):
                             f" (excluding masked pixels and outliers)")
 
     def simulate(self, log10_r):
-
-        print(f"Simulate of Reg FitWorkspace")
-
         reg = 10 ** log10_r
         M_dot_W_dot_M_plus_Q = self.w.M_dot_W_dot_M + reg * self.w.Q
         try:
@@ -1909,18 +1899,18 @@ class RegFitWorkspace(FitWorkspace):
         ax[1].axvline(opt_reg, color="k")
         ax[2].axvline(opt_reg, color="k")
         ax[0].set_ylabel(r"$G(r)$")
-        ax[0].set_xlabel("Regularisation hyper-parameter $r$")
+        ax[0].set_xlabel(r"Regularisation hyper-parameter $r$")
         ax[0].grid()
         ax[0].set_title(f"Optimal regularisation parameter: {opt_reg:.3g}")
         ax[1].plot(regs, chisqs)
         ax[1].set_ylabel(r"$\chi^2(\mathbf{A}(r) \vert \mathbf{\theta})$")
-        ax[1].set_xlabel("Regularisation hyper-parameter $r$")
+        ax[1].set_xlabel(r"Regularisation hyper-parameter $r$")
         ax[1].grid()
         ax[1].set_xscale("log")
         ax[2].set_xscale("log")
         ax[2].plot(regs, resolutions)
         ax[2].set_ylabel(r"$\mathrm{Tr}\,\mathbf{R}$")
-        ax[2].set_xlabel("Regularisation hyper-parameter $r$")
+        ax[2].set_xlabel(r"Regularisation hyper-parameter $r$")
         ax[2].grid()
         # fig.tight_layout()
         plt.subplots_adjust(hspace=0)
@@ -1931,7 +1921,7 @@ class RegFitWorkspace(FitWorkspace):
 
         fig = plt.figure(figsize=(7, 5))
         rho = compute_correlation_matrix(self.w.amplitude_cov_matrix)
-        plot_correlation_matrix_simple(plt.gca(), rho, axis_names=[''] * len(self.w.amplitude_params))
+        plot_correlation_matrix_simple(plt.gca(), rho, axis_names=[r'a'] * len(self.w.amplitude_params))
         # ipar=np.arange(10, 20))
         plt.gca().set_title(r"Correlation matrix $\mathbf{\rho}$")
         fig.tight_layout()

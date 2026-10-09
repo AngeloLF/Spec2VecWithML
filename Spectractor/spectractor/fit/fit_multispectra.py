@@ -790,8 +790,7 @@ class MultiSpectraFitWorkspace(FitWorkspace):
         plt.legend()
         if parameters.SAVE:
             fig.savefig(self.output_file_name + '_A1s.pdf', dpi=100, bbox_inches='tight')
-        if parameters.DISPLAY:
-            plt.show()
+        plt.show()
 
     def save_transmissions(self):
         aerosols, angstrom_exponent, ozone, pwv, reso, *A1s = self.params.values

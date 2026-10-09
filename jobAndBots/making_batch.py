@@ -122,10 +122,12 @@ def read_SYSargv(batch_codes, arg2split):
 
     if batch not in batch_codes.keys(): 
         if batch == "help": 
-            print(arg2split)
+            print(f"Possible batch :")
+            for bck, bcv in batch_codes.items():
+                print(f"    * {c.g}{bck}{c.d} [{', '.join(bcv[1])}]")
             sys.exit()
         else: 
-            raise Exception(f"BATCH {batch} unknow")
+            raise Exception(f"BATCH {batch} unknow [help for a list of possible batch]")
 
 
     for arg in argv:
@@ -314,7 +316,7 @@ if __name__ in "__main__":
         "apply"                : ["applies/apply_model.py",       ["model", "loss", "train", "lr", "tel", "test", "seed"]],
         "apply_spectractor"    : ["applies/apply_spectractor.py", ["test", "tel", "seed"]],
         "analyse"              : ["analyses/analyse_test.py",     ["model", "loss", "train", "lr", "tel", "test", "seed", "score"]],
-        "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test"]],
+        "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test", "seed"]],
         "analyseFOPA"          : ["analyses/analyse_FOPA.py",     ["model", "loss", "train", "lr", "tel", "test", "score"]],
         "findjob"              : ["None",                         ["modelwl"]] # Model with loss like `SCaM_chi2`
     }
