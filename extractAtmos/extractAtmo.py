@@ -172,6 +172,7 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
         try:
             run_spectrum_minimisation(w, method="newton", with_line_search=False)
             recupAtmosFromParams(w, file_json)
+            print(f"Save atmos params at {file_json}")
         except Exception as e:
             print(f"{c.r}WARNING : run_spectrum_minimisation exception for {Args.test}/{predFolder}/spectrum_{num_str}.npy ...{c.d}")
             print(f"{c.r}{e}{c.d}")
