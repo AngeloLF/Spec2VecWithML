@@ -665,5 +665,3 @@ if __name__ == "__main__":
 
     make_score(ARGS.score_type, models, tests, seed4spectractor)
 
-
-
