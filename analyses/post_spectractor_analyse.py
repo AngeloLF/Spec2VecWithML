@@ -31,16 +31,16 @@ if len(sys.argv) < 5:
 else:
     test, seed, tel, score = sys.argv[1:5]
 
-nb_show_min = 5
-nb_show_max = 5
+nb_show_min = 10
+nb_show_max = 10
 
 
 # test folder
 testfolder = f"test{test}{tel}-{seed}"
 testdir = f"./results/output_simu/{testfolder}"
-remember = f"./results/analyse/{score}/pred_Spectractor_x_x_0e+00/{testfolder}/remember_score_classic.txt"
+remember_brut = f"./results/analyse/{score}/pred_Spectractor_x_x_0e+00/{testfolder}/remember_score_brut_classic_brut.txt"
 
-with open(remember, "r") as f:
+with open(remember_brut, "r") as f:
     data = f.read().split("\n")
 
 print(f"{c.g}Top {nb_show_min} :{c.d}")
@@ -62,6 +62,7 @@ if num != "":
 
     spectractor_debug = input(f"Spectractor debug (y/n or empty) : ")
     spectractor_verbose = input(f"Spectractor verbose (y/n or empty) : ")
+    tampon_external_user = input(f"External Users ? (need to create a folder `~/alamurefonta_files`) (y/n or empty) : ")
 
 
     # IMPORTATION SPECTRACTOR
@@ -84,8 +85,11 @@ if num != "":
 
 
 
-    # post_spectractor_analyse_folder
-    psaf = f"./results/analyse/post_spectractor_analyse"
+    # post_spectractor_analyse_folder$
+    if tampon_external_user == "y":
+        psaf = f"~/alamurefonta_files"
+    else:
+        psaf = f"./results/analyse/post_spectractor_analyse"
     savefile = f"{testdir}/image_fits/images_{num}.fits"
     spectrum_save = f"{psaf}/spectrum_fits"
 

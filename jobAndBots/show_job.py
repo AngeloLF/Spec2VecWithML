@@ -262,10 +262,6 @@ def inspect_extract(params, debug):
 
 	test = params['test']
 
-	if "range" in params.keys():
-
-		
-
 	a, d = params["range"].split("_")
 	a, z = int(a), int(a)+int(d)
 	nb_make = 0
