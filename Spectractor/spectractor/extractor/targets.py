@@ -33,10 +33,13 @@ else:
     _SIMBAD_VOTABLE_FIELDS = ('U', 'B', 'V', 'R', 'I', 'J', 'sp_type',
                               'parallax', 'propermotions', 'rvz_redshift', "IDS", "ids")                
 
+"""
 try:
     from gaiaspec import getGaia
 except ModuleNotFoundError:
     getGaia = None
+"""
+getGaia = None
 
 
 def _get_cache_dir():
