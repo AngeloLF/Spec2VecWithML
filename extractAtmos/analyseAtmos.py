@@ -36,6 +36,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         shutil.rmtree(f"{pathSave}/{Args.test}")
     os.mkdir(f"{pathSave}/{Args.test}")
     os.mkdir(f"{pathSave}/{Args.test}/html")
+    os.mkdir(f"{pathSave}/{Args.test}/graph")
 
     for t in targets:
         os.mkdir(f"{pathSave}/{Args.test}/{t}")
@@ -238,7 +239,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         with open(f"{pathSave}/{Args.test}/html/extract_atmo{sorting_str}.html", "w", encoding="utf-8") as f:
 
             html_codes = [f'<meta charset="UTF-8">', f"<h1>Extraction Atmosphere</h1>"]
-            html_codes.append(generate_html_table(targets+["Total", "Classement (N)", "Classement (%)"], saveFolders_str, x, y, sorting=sorting))
+            html_codes.append(generate_html_table(targets + ["Total", "Num", ""], saveFolders, x, y, e, sorting=sorting, path_graph=f"{pathSave}/{Args.test}/graph", subfolderOneTestPlot=""))
 
             f.write('\n'.join(html_codes))
 

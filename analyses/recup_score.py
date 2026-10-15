@@ -267,7 +267,7 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
 
 
 
-def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.', score="---", typeScore="---", path_graph=f"results/analyse/graph", markers=None, colors=None, absSorting=False):
+def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.', score="---", typeScore="---", path_graph=f"results/analyse/graph", markers=None, colors=None, absSorting=False, subfolderOneTestPlot=None):
 
     """
         Créer le fichier HTML pour visualiser la les scores produit par les analyses.
@@ -300,7 +300,8 @@ def generate_html_table(colonnes, lignes, text, y, e, sorting=False, marker='.',
         general_plot(lignes, mean_scores, min_scores, max_scores, title=f"Score {score} ({typeScore})", savefig_name=f"{path_graph}/{score}_{typeScore}.png")
 
         for i, col in enumerate(colonnes[:-3]):
-            oneTest_plot(col, lignes, y[:, i], e[:, i]/2, title=f"Score {score} ({typeScore})", savefig_name=f"{path_graph}/{score}_{typeScore}/{col}.png")
+            savefig_name_i = f"{path_graph}/{score}_{typeScore}/{col}.png" if subfolderOneTestPlot is None else subfolderOneTestPlot
+            oneTest_plot(col, lignes, y[:, i], e[:, i]/2, title=f"Score {score} ({typeScore})", savefig_name=savefig_name_i)
 
 
     # Definition du CSS (qui sera directement integrer dans le HTML, pas de fichier à coté tant pis)
