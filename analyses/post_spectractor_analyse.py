@@ -45,11 +45,13 @@ with open(remember, "r") as f:
 
 print(f"{c.g}Top {nb_show_min} :{c.d}")
 for d in data[:nb_show_min]:
-    print(f"    - {d}")
+    num = d.split(" ")[0].split("_")[-1].split(".")[0]
+    print(f"    - {d} [{testdir[1:]}/image_fits/images_{num}.fits]")
 
 print(f"{c.r}Last {nb_show_max} :{c.d}")
 for d in data[-nb_show_max:]:
-    print(f"    - {d}")
+    num = d.split(" ")[0].split("_")[-1].split(".")[0]
+    print(f"    - {d} [{testdir[1:]}/image_fits/images_{num}.fits]")
 
 
 

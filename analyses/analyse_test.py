@@ -49,6 +49,8 @@ def compute_score_L1(true, pred, sim, num_spec_str):
     # Save if needed
     return {'score' : score, 
             'score_norma' : score_norma,
+            'score_brut' : score,
+            'score_brut_norma' : score_norma,
             'fact' : fact_n}
 
 
@@ -78,12 +80,13 @@ def compute_score_chi2(true, pred, sim, num_spec_str, Cread, gain, SpectractorPr
     residus = true_simu - pred_simu
     chi2eq = residus**2 / (sigma_READ**2 + true_simu / gain) * np.sign(residus)
     score = np.sum(np.abs(chi2eq)) / N
+    score_brut = score
 
     # norm
     residus_n = true_simu - pred_simu_n
     chi2eq_n = residus_n**2 / (sigma_READ**2 + true_simu / gain) * np.sign(residus_n)
     score_n = np.sum(np.abs(chi2eq_n)) / N
-
+    score_brut_norma = score_n
 
     # reduc for spectractor
     if Args.model == "Spectractor" and score > 20 and SpectractorProcess:
@@ -93,6 +96,8 @@ def compute_score_chi2(true, pred, sim, num_spec_str, Cread, gain, SpectractorPr
 
     return {'score' : score,
             'score_norma' : score_n,
+            'score_brut' : score_brut,
+            'score_brut_norma' : score_brut_norma,
             'fact' : fact_n,
             'image' : true_simu, 
             'residus' : [residus, residus_n],
@@ -366,12 +371,14 @@ def open_fold(args, paths, folds, nb_level=20):
 
     vp = np.load(f"{paths.test}/vparams.npz")
      
-    res = {"classic" : np.zeros(hp["nsimu"]) * np.nan,
-           "norma"   : np.zeros(hp["nsimu"]) * np.nan,
-           "flux"    : np.zeros(hp["nsimu"]),
-           "file"    : np.zeros(hp["nsimu"]).astype(str),
-           "num"     : (np.zeros(hp["nsimu"]) * np.nan).astype(str),
-           "fact"    : np.zeros(hp["nsimu"]) * np.nan}
+    res = {"classic"      : np.zeros(hp["nsimu"]) * np.nan,
+           "norma"        : np.zeros(hp["nsimu"]) * np.nan,
+           "classic_brut" : np.zeros(hp["nsimu"]) * np.nan,
+           "norma_brut"   : np.zeros(hp["nsimu"]) * np.nan,
+           "flux"         : np.zeros(hp["nsimu"]),
+           "file"         : np.zeros(hp["nsimu"]).astype(str),
+           "num"          : (np.zeros(hp["nsimu"]) * np.nan).astype(str),
+           "fact"         : np.zeros(hp["nsimu"]) * np.nan}
 
 
 
@@ -413,6 +420,8 @@ def open_fold(args, paths, folds, nb_level=20):
 
         res["classic"][i] = result['score']
         res["norma"][i] = result['score_norma']
+        res["classic_brut"][i] = result['score_brut']
+        res["norma_brut"][i] = result['score_brut_norma']
         res["file"][i] = file
         res["num"][i] = num_spec_str
         res["fact"][i] = result["fact"]
@@ -684,7 +693,15 @@ if __name__ == "__main__":
         with open(f"{Paths.save}/remember_score_{rtype}.txt", "w") as f:
             f.write(remember_file)
 
-        print(rscore)
+    for rtype in ["classic_brut", "norma_brut"]:
+
+        rscore = res[rtype]
+        args = np.argsort(rscore)
+        remember_file = "\n".join([f"{rfiles[i]} : {rscore[i]}" for i in args])
+        print(f"{c.y}INFO : save {Paths.save}/remember_score_brut_{rtype}.txt ...{c.d}")
+        with open(f"{Paths.save}/remember_score_brut_{rtype}.txt", "w") as f:
+            f.write(remember_file)
+
 
 
 
