@@ -44,10 +44,14 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     
     saveFolders = [pf for pf in os.listdir(f"{path}/{Args.test}/{atmoParamFolder}") if not "." in pf]
     saveFolders_str = list()
+    allFolders = [pf for pf in os.listdir(f"{path}/{Args.test}") if not "." in pf and pf.startswith("pred_")]
 
     full_data = dict() # {savef : {t:[list(), list()] for t in targets} for savef in saveFolders}
 
     for savef in saveFolders:
+
+        if savef in allFolders:
+            allFolders.remove(savef)
 
         if savef.startswith("pred_"):
             saveFolders_str.append("_".join(savef.split("_")[1:3] + [savef.split("_")[4]]))
@@ -70,13 +74,18 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
             else:
 
-                print(f"Info [extractAtmos.py] in analyse, skip atmos_params_{n}_spectrum.json")
+                print(f"Info [extractAtmos.py] in analyse, for {savef}, skip atmos_params_{n}_spectrum.json")
                 for t in targets:
                     rdata[t][0][i] = np.nan
                     rdata[t][1][i] = np.nan
 
         full_data[savef] = deepcopy(rdata)
 
+
+    ### show all miss folders
+    print(f"{c.r}Folders without atmos extraction :{c.d}")
+    for pf in allFolders:
+        print(f"    * {c.ti}{pf}{c.d}")
 
 
     ### Importation hparams & variable params

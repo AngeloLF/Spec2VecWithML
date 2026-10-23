@@ -288,6 +288,13 @@ class MyDisperser():
 
         return deltaX
 
+    def grating_pixel_to_lambda(self, deltaX, x0, D, order=1):
+
+        theta = self.refraction_angle(deltaX, x0, D=D)
+        theta0 = get_theta0(x0[0], x0[1], [self.hp.SIM_NX, self.hp.SIM_NY], self.hp.CCD_PIXEL2ARCSEC)
+        lambdas = (np.sin(theta) - np.sin(theta0)) / (order * self.N(x0))
+        return lambdas * 1e6
+
 
     def N(self, x):
 
@@ -306,6 +313,27 @@ class MyDisperser():
             p = fit_p(p_init, x, y, z)
             return p
 
+
+    #####
+    ##### DIVERS
+    #####
+
+    def get_delta_pix_ortho(self, deltaX, x0, D):
+
+        theta0 = get_theta0(x0[0], x0[1], [self.hp.SIM_NX, self.hp.SIM_NY], self.hp.CCD_PIXEL2ARCSEC)
+        deltaX0 = np.tan(theta0) * D / self.hp.CCD_PIXEL2MM
+        return deltaX + deltaX0
+
+    def get_refraction_angle(self, deltaX, x0, D):
+
+        delta = self.get_delta_pix_ortho(deltaX, x0, D=D)
+        theta = np.arctan2(delta * self.hp.CCD_PIXEL2MM, D)
+        return theta
+
+    def refraction_angle(self, deltaX, x0, D):
+
+        theta = self.get_refraction_angle(deltaX, x0, D=D)
+        return theta
 
 
 if __name__ == "__main__":

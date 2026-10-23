@@ -5,8 +5,9 @@ import coloralf as c
 import numpy as np
 
 
-def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, ext="slurm", mem=None, local=False, gpu_device="v100", nbj=None):
 
+
+def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, ext="slurm", mem=None, local=False, gpu_device="v100", nbj=None):
 
 
     ### ENTETE
@@ -18,11 +19,9 @@ def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, e
         # slurm = ["Write-Host \"PS1 : sbatch\""]
 
 
-
     ### Number of task & time max
     ntasks = len(codes) if mult else 1
     true_nbj = nbj if nbj is not None else params.nbj[device]
-
 
 
     ### DEVICE
@@ -60,12 +59,10 @@ def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, e
         print(f"WARNING : le device {device} n'existe pas ! Cela doit être : cpu, gpu")
 
 
-
     ### MAIL
     if mail and not local:
         slurm.append(f"\n#SBATCH --mail-user={params.mail}")
         slurm.append(f"#SBATCH --mail-type=BEGIN,END,FAIL")
-
 
 
     ### OUTPUT
@@ -74,12 +71,10 @@ def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, e
         slurm.append(f"#SBATCH --error=slurm_log/slurm_err/{batch_name}_%j.txt        # Fichier d'erreur")
 
 
-
     ### V-ENV
     if params.venv is not None and not local:
         slurm.append(f'\nVENV_PATH="{params.venv}"')
         slurm.append('source ${' + 'VENV_PATH' + '}/bin/activate')
-
 
 
     ### code
@@ -100,7 +95,6 @@ def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, e
 
         slurm.append(" &\n".join([f"{params.srun} --exclusive sjob_{i}.sh" for i in range(len(codes))]))        
         slurm.append(f"wait")
-
 
 
     ### WRITING SLURM FILE

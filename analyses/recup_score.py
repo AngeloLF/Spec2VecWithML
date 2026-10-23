@@ -12,6 +12,9 @@ import pandas as pd
 
 
 models_colors = {
+    "True"            : ["#000000", "#000000"],
+    "SpectractorFile" : ["#000000", "#000000"],
+
     "SCaM"    : ["#ff0000", "#ff6666"],
     "SCaMv2"  : ["#ff007f", "#ff66b2"],
     "SotSu"   : ["#0000ff", "#6666ff"],

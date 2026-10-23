@@ -18,7 +18,6 @@ from losses import give_Loss_Function, Chi2Loss
 
 
 
-
 def load_from_pretrained(model_name, loss_name, folder_pretrain, prelr, device, is_pret=False):
 
     model, Custom_dataloader = load_model(model_name, device)
@@ -32,6 +31,7 @@ def load_from_pretrained(model_name, loss_name, folder_pretrain, prelr, device, 
     print(f"{c.ly}Loading ok{c.d}")
 
     return model, Custom_dataloader
+
 
 
 
@@ -60,6 +60,7 @@ def load_model(model_name, device, path2architecture='./models/'):
 
 
 
+
 def load_model_from_Args(args):
 
     device = get_device(args)
@@ -70,13 +71,6 @@ def load_model_from_Args(args):
         model, Custom_dataloader = load_model(args.model, device)
 
     return model, Custom_dataloader, device
-
-
-
-
-model = nn.Linear(10, 2)
-optimizer = optim.SGD(model.parameters(), lr=0.1)
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
 
 
 
@@ -110,6 +104,7 @@ def load_scheduler(optimizer, Args):
     else:
 
         raise Exception(f"Scheduler `{name}` unknown. Choose cosine, plateau or none.")
+
 
 
 
@@ -172,7 +167,6 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
             train_loss_mse += mse_loss(outputs, spectra) * images.size(0)
             train_loss_chi2 += chi2_loss(outputs, spectra) * images.size(0)
             """
-
 
 
         train_loss = train_loss / len(train_loader.dataset)
@@ -253,6 +247,7 @@ def default_training(Args, device, train_loader, valid_loader, loss_function):
     run_stats = {"train" : train_list_loss, "valid" : valid_list_loss, "lrates" : lrates}
 
     return best_state, run_stats
+
 
 
 

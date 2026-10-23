@@ -409,10 +409,13 @@ def flip_and_rotate_adr_to_image_xy_coordinates(adr_ra, adr_dec, dispersion_axis
     >>> assert adr_y[0] < adr_v[0]
 
     """
-    adr_x, adr_y = flip_and_rotate_radec_vector_to_xy_vector(adr_ra, adr_dec,
+
+    adr_x, adr_y = flip_and_rotate_radec_vector_to_xy_vector(adr_ra, adr_dec)
+    """
                                                              camera_angle=hparameters.OBS_CAMERA_ROTATION,
                                                              flip_ra_sign=hparameters.OBS_CAMERA_RA_FLIP_SIGN,
                                                              flip_dec_sign=hparameters.OBS_CAMERA_DEC_FLIP_SIGN)
+    """
     if not np.isclose(dispersion_axis_angle, 0, atol=0.001):
         # minus sign as rotation matrix is apply on the right on the adr vector
         a = - dispersion_axis_angle * np.pi / 180

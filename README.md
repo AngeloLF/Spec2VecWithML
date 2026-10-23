@@ -40,6 +40,7 @@ Need arguments:
     * *testgauss* : test with gaussian 2D PSF
     * *testna* : test with 2 moffats PSF, with one not aligned
     * *testgaussna* : test with 2 gaussians 2D PSF, with one not aligned
+    * *teststardice* : test with the extracted PSF of StarDice using MonoDice
   * `tel` : telescope. Can be give individualy or once for all. Tel available :
     * *ctio* : Cerro Tololo Inter-American Observatory, Chili
     * *stardice* : A 40 cm telescope in OHP, France
@@ -54,39 +55,39 @@ python jobAndBots/making_batch.py simu nsimu=16384,2048,1024,1024,1024 type=trai
 ### Training models
 
 For training models :
-  * *model* : list of model architecture (like "SCaM", "SotSu")
-  * *loss* : loss funcron (like "chi2", "MSE")
-  * *train* : name of trains, but only the number of simulations (like "16k" for "train16kauxtel")
-  * *lr* : list of learning rates (like "1e-4", "1e-5")
-  * *tel* : list of telescope (like "auxtel", "ctio", "stardice")
-  * `seed` : seed to pick parameters
+  * `model` : list of model architecture (like *SCaM*, *SotSu*, ...)
+  * `loss` : loss function (like *chi2*, *MSE*, ...)
+  * `train` : name of trains, but only the number of simulations (like *16k* for "train16kauxtel")
+  * `lr` : list of learning rates (like *1e-4*, *1e-5*, ...)
+  * `tel` : list of telescope (like *auxtel*, *ctio*, *stardice*, ...)
+  * `seed` : seed
 
 ```bash
-python jobAndBots/making_batch.py training model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel e=500
+python jobAndBots/making_batch.py training model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel e=500 seed=413
 ```
 
 
 ### Apply models
 
 For apply a model, and also apply Spectractor :
-  * *model* : list of model architecture
-  * *loss* : loss funcron
-  * *train* : name of trains, but only the number of simulations
-  * *lr* : list of learning rates
-  * *tel* : list of telescope
-  * *test* : list of test to apply, like :
+  * `model` : list of model architecture (like *SCaM*, *SotSu*, ...)
+  * `loss` : loss function (like *chi2*, *MSE*, ...)
+  * `train` : name of trains, but only the number of simulations (like *16k* for "train16kauxtel")
+  * `lr` : list of learning rates (like *1e-4*, *1e-5*, ...)
+  * `tel` : list of telescope (like *auxtel*, *ctio*, *stardice*, ...)
+  * `test` : list of test to apply, like :
     * *x* : for classic test
     * *ext* : for testEXT
     * *ot* : for testOT
     * *gaussian* for testGAUSSIAN
     * *gaussianna* : for testGAUSSIANNA
     * *stardice* for testSTARDICE
-  * `seed` : seed to pick parameters
+  * `seed` : seed
 
 For apply Spectractor, *test* and *tel* needed. *ncpu* can also be given, to cut the apply.
 
 ```bash
-python jobAndBots/making_batch.py apply model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel test=x,ext,ot
+python jobAndBots/making_batch.py apply model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel test=x,ext,ot seed=413
 python jobAndBots/making_batch.py apply_spectractor test=x tel=auxtel ncpu=100
 python jobAndBots/making_batch.py apply_spectractor test=ext tel=auxtel ncpu=100
 python jobAndBots/making_batch.py apply_spectractor test=ot tel=auxtel ncpu=100
@@ -96,30 +97,47 @@ python jobAndBots/making_batch.py apply_spectractor test=ot tel=auxtel ncpu=100
 ### Analyse spectrum from apply
 
 For analyse results :
-  * *model* : list of model architecture
-  * *loss* : loss funcron
-  * *train* : name of trains, but only the number of simulations
-  * *lr* : list of learning rates
-  * *tel* : list of telescope
-  * *test* : list of test to apply
-  * *score* : list of score to calculate (L1 and chi2)
-  * `seed` : seed to pick parameters
+  * `model` : list of model architecture (like *SCaM*, *SotSu*, ...)
+  * `loss` : loss function (like *chi2*, *MSE*, ...)
+  * `train` : name of trains, but only the number of simulations (like *16k* for "train16kauxtel")
+  * `lr` : list of learning rates (like *1e-4*, *1e-5*, ...)
+  * `tel` : list of telescope (like *auxtel*, *ctio*, *stardice*, ...)
+  * `test` : list of test to apply (like *x*, *ot*, ...)
+  * `score` : list of score to calculate (like *L1*, *chi2*, ...)
+  * `seed` : seed
 
 
 ```bash
-python jobAndBots/making_batch.py analyse model=SCaM loss=chi2,MSE lr=1e-4,1e-5 train=16k test=x,ext,ot tel=auxtel score=L1,chi2
+python jobAndBots/making_batch.py analyse model=SCaM loss=chi2,MSE lr=1e-4,1e-5 train=16k test=x,ext,ot tel=auxtel score=L1,chi2 seed=413
 python jobAndBots/making_batch.py analyse model=Spectractor loss=x lr=0e+0 train=x test=x,ext,ot tel=auxtel score=L1,chi2
 ```
 
 
 ### Produce resume analyse
 
-All analyses can be resume in single html pages with all scores, and additionnal graphs. Need to give `seed` for spectractor scores. Just make :
+All analyses can be resume in single html pages with all scores, and additionnal graphs. Need to give `seed` for spectractor scores in `specseed` argv. Just make :
 
 ```bash
-python analyses/recup_score.py 413
+python analyses/recup_score.py specseed=413
 ```
 
+
+### Atmo extraction
+
+Extraction of atmo. params. from prediction spectrum, using SpectrumFitWorkspace and run_spectrum_minimisation from spectractor.fit.fit_spectrum.
+
+For extract :
+  * `model` : list of model architecture (like *SCaM*, *SotSu*, ...)
+  * `loss` : loss function (like *chi2*, *MSE*, ...)
+  * `train` : name of trains, but only the number of simulations (like *16k* for "train16kauxtel")
+  * `lr` : list of learning rates (like *1e-4*, *1e-5*)
+  * `tel` : list of telescope (like *auxtel*, *ctio*, *stardice*, ...)
+  * `test` : list of test to apply (like *x*, *ot*, ...)
+  * `seed` : seed
+
+```bash
+python jobAndBots/making_batch.py extract_atmo model=SCaM loss=chi2,MSE lr=1e-4,1e-5 train=16k test=x,ext,ot tel=auxtel seed=413
+```
 
 
 

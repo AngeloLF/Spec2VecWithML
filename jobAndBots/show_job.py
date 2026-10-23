@@ -241,6 +241,7 @@ def inspect_apply_spectractor(params, debug):
 def inspect_extract(params, debug):
 
 	model, loss, train, lr = params['model'], params['loss'], params['train'], f"{float(params['lr']):.0e}"
+	path = f"./results/output_simu/{params['test']}"
 
 	if "load" in params.keys() and params["load"] != "None":
 
@@ -262,10 +263,17 @@ def inspect_extract(params, debug):
 
 	test = params['test']
 
-	a, d = params["range"].split("_")
-	a, z = int(a), int(a)+int(d)
-	nb_make = 0
-	to_make = z - a
+
+	# if "range" in extract file
+	if "range" in params.keys():
+		a, d = params["range"].split("_")
+		a, z = int(a), int(a)+int(d)
+		nb_make = 0
+		to_make = z - a
+	else:
+		a, z = 0, len(os.listdir(f"{path}/spectrum"))
+		nb_make = 0
+		to_make = z - a
 
 	printdebug(f"Extract on {pred_folder} ...", debug)
 	printdebug(f"Range : {a} to {z} (to_make={to_make})", debug)

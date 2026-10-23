@@ -26,7 +26,6 @@ from spectractor.fit.fit_spectrum import SpectrumFitWorkspace, run_spectrum_mini
 
 
 
-
 def showHeader(header):
 
     keys = list(header.keys())
@@ -34,8 +33,6 @@ def showHeader(header):
 
     for k in keys:
         print(f"{c.lr}{k}{c.d} : {header[k]}")
-
-
 
 
 
@@ -75,11 +72,11 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
 
     if Args.model == "true":
         predFolder = "spectrum"
-        saveFolder = "true"
+        saveFolder = f"pred_True_x_x_0e+00"
 
     elif Args.model == "spectractorfile":
         predFolder = "Spectractor"
-        saveFolder = "Spectractor"
+        saveFolder = f"pred_SpectractorFile_x_x_0e+00"
 
     else:
         predFolder = f"pred_{Args.fullname}"
@@ -181,6 +178,8 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
 
     else:
         print(f"Info [extractAtmos.py] : fits {path}/{Args.test}/spectrum_fits/images_{num_str}_spectrum.fits not exist [skip this one]")
+
+
 
 
 

@@ -10,7 +10,7 @@ from getCalspec import getCalspec
 from tqdm import tqdm
 
 from utils_spec.ctTime import ctTime
-from utils_spec.adr import adr_calib
+from utils_spec.adr import adr_calib, flip_and_rotate_adr_to_image_xy_coordinates
 from utils_spec.load_disperser import MyDisperser
 
 
@@ -935,11 +935,38 @@ class SpecSimulator():
             adr_x, adr_y = (np.asarray([adr_ra, adr_dec]).T @ transformation).T
 
             if "debug-adr" in sys.argv:
+
+                order = 2
+                niter = 3
+
+                Dx = np.arange(self.Nx) - self.R0[0]  # distance in (x,y) spectrogram frame for column x
+                Dy_disp_axis = np.tan(dispersion_axis_angle * np.pi / 180) * Dx  # disp axis height in spectrogram frame for x with respect to order 0
+                distance = np.sign(Dx) * np.sqrt(Dx * Dx + Dy_disp_axis * Dy_disp_axis)  # algebraic distance along dispersion axis
+
+                # Wavelengths using the order 0 shifts (ADR has no impact as it shifts order 0 and order p equally)
+                new_x0 = self.R0
+                # First guess of wavelengths
+                lambdas_JN = self.disperser.grating_pixel_to_lambda(distance, new_x0, D=self.hp.DISTANCE2CCD, order=order)
+                # Evaluate ADR
+                for k in range(niter):
+                    adr_ra_JN, adr_dec_JN = adr_calib(self.hp, lambdas_JN, ADR_PARAMS, self.hp.OBS_LATITUDE, lambda_ref=self.lambda_adr_ref)
+                    adr_u_JN, adr_v_JN = flip_and_rotate_adr_to_image_xy_coordinates(adr_ra_JN, adr_dec_JN, dispersion_axis_angle=dispersion_axis_angle)
+                    # Compute lambdas at pixel column x
+                    lambdas_JN = self.disperser.grating_pixel_to_lambda(distance - adr_u_JN, new_x0, D=self.hp.DISTANCE2CCD, order=order)
+
+
                 print("flip, a, rotation, transformation")
                 print(flip, "\n", a, "\n", rotation, "\n", transformation)
                 print(f"Here ADR XY with order with size : {np.shape(adr_x)}")
-                plt.plot(adr_ra, c="r", label="adrx")
-                plt.plot(adr_dec, c="g", label="adry")
+                plt.plot(lambdas, adr_ra, c="#FF0000", label="ADRx", marker=".")
+                plt.plot(lambdas, adr_dec, c="#00FF00", label="ADYy", marker=".")
+
+                plt.plot(lambdas_JN, adr_ra_JN, c="#990000", label="ADRx_JN", marker=".", ls="")
+                plt.plot(lambdas_JN, adr_dec_JN, c="#009900", label="ADRy_JN", marker=".", ls="")
+
+                plt.xlim(300, 1100)
+                plt.ylim(-10, 10)
+                plt.legend()
                 plt.show()
 
 
