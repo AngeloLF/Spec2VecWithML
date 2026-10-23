@@ -176,6 +176,8 @@ def general_plot(x, y, ymin, ymax, title="<title>", di=0.1, savefig_name=None):
     plt.title(title)
     plt.tight_layout()
     if savefig_name is not None:
+        if "debug" in sys.argv:
+            print(f"DEBUG [analyses/recup_score.py] : savefig general_plot {savefig_name}.png")
         plt.savefig(savefig_name)
         plt.close()
     else:
@@ -261,8 +263,14 @@ def oneTest_plot(col, x, y, ystd, title="<title>", savefig_name=None, di=0.1):
     plt.ylabel(col)
     plt.legend()
     plt.tight_layout()
-    if savefig_name is not None:
+    if savefig_name is not None and len(savefig_name) > 0:
+        if "debug" in sys.argv:
+            print(f"DEBUG [analyses/recup_score.py] : savefig oneTest_plot `{savefig_name}.png`")
         plt.savefig(savefig_name)
+        plt.close()
+    elif type(savefig_name) is str and len(savefig_name) == 0:
+        if "debug" in sys.argv:
+            print(f"DEBUG [analyses/recup_score.py] : savefig close (no savefig_name)")
         plt.close()
     else:
         plt.show()
