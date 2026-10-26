@@ -253,13 +253,13 @@ def inspect_extract(params, debug):
 
 		load_name = ""
 
-	pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
 
 	if model == "true":
-		pred_folder = "true"
+		pred_folder = f"pred_True_{loss}_{load_name}{train}_{lr}"
 	elif model == "spectractorfile":
-		pred_folder = "Spectractor" 
-
+		pred_folder = f"pred_SpectractorFile_{loss}_{load_name}{train}_{lr}"
+	else:
+		pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
 
 	test = params['test']
 

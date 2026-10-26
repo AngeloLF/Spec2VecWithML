@@ -27,6 +27,7 @@ def getTrueValues(hp, vp, label):
 
 
 
+
 def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos_params_fit", pathSave="./results/analyse/extratAtmos", colors=["r", "g", "b", "y", "m"]):
 
     targets = ["vaod", "ozone", "pwv"]

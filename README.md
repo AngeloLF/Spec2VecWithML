@@ -128,6 +128,9 @@ Extraction of atmo. params. from prediction spectrum, using SpectrumFitWorkspace
 
 For extract :
   * `model` : list of model architecture (like *SCaM*, *SotSu*, ...)
+    * *Spectractor* for Spectractor spectrum (like *Apply*)
+    * *spectractorfile* for atmos extractions with Spectractor files
+    * *true* for atmos extractions in simulated spectrum
   * `loss` : loss function (like *chi2*, *MSE*, ...)
   * `train` : name of trains, but only the number of simulations (like *16k* for "train16kauxtel")
   * `lr` : list of learning rates (like *1e-4*, *1e-5*)
@@ -136,7 +139,8 @@ For extract :
   * `seed` : seed
 
 ```bash
-python jobAndBots/making_batch.py extract_atmo model=SCaM loss=chi2,MSE lr=1e-4,1e-5 train=16k test=x,ext,ot tel=auxtel seed=413
+python jobAndBots/making_batch.py extract_atmo model=SCaM loss=chi2,MSE lr=1e-4,1e-5 train=16k test=x,ext,ot tel=auxtel seed=413 ncpu=10
+python jobAndBots/making_batch.py extract_atmo model=Spectractor,spectractorfile,true loss=x lr=0e+00 train=x test=x tel=auxtel seed=413 ncpu=10
 ```
 
 
