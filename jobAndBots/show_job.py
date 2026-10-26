@@ -5,6 +5,7 @@ import subprocess
 
 
 
+
 def printdebug(msg, debug, color=c.bm, space=0):
 
 	if debug:
@@ -114,6 +115,7 @@ def inspect_training(params):
 
 
 
+
 def inspect_simu(params):
 
 	path = f"./results/output_simu/{params['f']}"
@@ -150,6 +152,7 @@ def inspect_simu(params):
 		ra = -1
 
 	return rl, ra, "0-simu"
+
 
 
 
@@ -238,6 +241,8 @@ def inspect_apply_spectractor(params, debug):
 	return rl, ra, "2-apply_spectractor"
 
 
+
+
 def inspect_extract(params, debug):
 
 	model, loss, train, lr = params['model'], params['loss'], params['train'], f"{float(params['lr']):.0e}"
@@ -255,12 +260,13 @@ def inspect_extract(params, debug):
 
 
 	if model == "true":
-		pred_folder = f"pred_True_{loss}_{load_name}{train}_{lr}"
+		model_str = f"True"
 	elif model == "spectractorfile":
-		pred_folder = f"pred_SpectractorFile_{loss}_{load_name}{train}_{lr}"
+		model_str = f"SpectractorFile"
 	else:
-		pred_folder = f"pred_{model}_{loss}_{load_name}{train}_{lr}"
-
+		model_str = model
+	
+	pred_folder = f"pred_{model_str}_{loss}_{load_name}{train}_{lr}"
 	test = params['test']
 
 
@@ -298,21 +304,15 @@ def inspect_extract(params, debug):
 
 		labelPC = "" if nb_make == to_make else f" [{nb_make/to_make*100:.2f} %]"
 
-		rl = f"Apply spectractor > {test} RANGE {a} to {z} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
+		rl = f"Extract {model_str} > {test} RANGE {a} to {z} : {color}{nb_make:{lmax}}/{to_make}{c.d}{labelPC}"
 		ra = nb_make/to_make*100
 
 	else:
 
-		rl = f"Apply spectractor > {test} RANGE {a} to {z} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
+		rl = f"Extract {model_str} > {test} RANGE {a} to {z} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
 		ra = -1
 
 	return rl, ra, "2-apply_spectractor"
-
-
-
-
-
-
 
 
 
@@ -325,6 +325,8 @@ def get_color(nb_make, nb_total):
 	else : color = c.lk
 
 	return color
+
+
 
 
 def countingColor(pcs, c100=0):
@@ -344,6 +346,10 @@ def countingColor(pcs, c100=0):
 
 	x100 = np.sum(pcs == 100.0) + c100
 	print(           f"Total {c.lg}Finish{c.d}    : {x100}")
+
+
+
+
 
 
 
