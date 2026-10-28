@@ -311,6 +311,8 @@ if __name__ in "__main__":
         "apply_spectractor"    : ["applies/apply_spectractor.py", ["test", "tel", "seed"]],
         "analyse"              : ["analyses/analyse_test.py",     ["model", "loss", "train", "lr", "tel", "test", "seed", "score"]],
         "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test", "seed"]],
+        "analyse_atmo"         : ["extractAtmos/analyseAtmo.py",  ["tel", "test", "seed"]],
+
         "analyseFOPA"          : ["analyses/analyse_FOPA.py",     ["model", "loss", "train", "lr", "tel", "test", "score"]],
         "findjob"              : ["None",                         ["modelwl"]] # Model with loss like `SCaM_chi2`
     }

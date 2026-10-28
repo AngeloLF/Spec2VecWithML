@@ -312,7 +312,7 @@ def inspect_extract(params, debug):
 		rl = f"Extract {model_str} > {test} RANGE {a} to {z} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
 		ra = -1
 
-	return rl, ra, "2-apply_spectractor"
+	return rl, ra, "3-extract_atmo"
 
 
 

@@ -28,6 +28,35 @@ def getTrueValues(hp, vp, label):
 
 
 
+def search_missing_extraction(sysArgv, path="./results/output_simu", atmoParamFolder="atmos_params_fit"):
+
+    Args = get_argv(sysArgv[1:], prog="analyse_atmo")
+
+    saveFolders = [pf for pf in os.listdir(f"{path}/{Args.test}/{atmoParamFolder}") if not "." in pf]
+    saveFolders_str = list()
+    allFolders = [pf for pf in os.listdir(f"{path}/{Args.test}") if not "." in pf and pf.startswith("pred_")]
+    allFolders += [f"pred_True_x_x_0e+00", f"pred_SpectractorFile_x_x_0e+00"]
+
+    for savef in saveFolders:
+        if savef in allFolders:
+            allFolders.remove(savef)
+
+    ### show all miss folders
+    batchs = list()
+    #print(f"{c.r}Folders without atmos extraction :{c.d}")
+
+    for pf in allFolders:
+
+        _, model_, loss_, trainseed_, lr_ = pf.split("_")
+        batch = f"extract_atmo model={model_} loss={loss_} train={trainseed_} test={Args.test} lr={lr_} load=None"
+        batchs.append(batch)
+        #print(f"    * {c.ti}{pf}{c.d} [{batch}]")
+
+    return batchs
+
+
+
+
 def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos_params_fit", pathSave="./results/analyse/extratAtmos", colors=["r", "g", "b", "y", "m"]):
 
     targets = ["vaod", "ozone", "pwv"]
@@ -87,6 +116,9 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     print(f"{c.r}Folders without atmos extraction :{c.d}")
     for pf in allFolders:
         print(f"    * {c.ti}{pf}{c.d}")
+        _, model_, loss_, trainseed_, lr_ = pf.split("_")
+
+
 
 
     ### Importation hparams & variable params
