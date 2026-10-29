@@ -7,6 +7,9 @@ import numpy as np
 
 sys.path.append('./')
 
+sys.path.append('./models/')
+from get_argv import get_argv
+
 
 
 
@@ -126,8 +129,12 @@ def read_SYSargv(batch_codes, arg2split):
 
     # create var
     ARGS = SimpleNamespace(a2s=dict())
-    batch = sys.argv[1]
-    argv = sys.argv[2:]
+    if len(sys.argv) > 1:
+        batch = sys.argv[1]
+        argv = sys.argv[2:]
+    else:
+        batch = "help"
+        argv = list()
 
 
     # if batch not in batch_codes
@@ -135,7 +142,8 @@ def read_SYSargv(batch_codes, arg2split):
         if batch in ["help", "h", "-h", "--h"]: 
             print(f"Possible batch :")
             for bck, bcv in batch_codes.items():
-                print(f"    * {c.g}{bck}{c.d} [{', '.join(bcv[1])}]")
+                color_str = c.g if not bck.startswith("search@") else c.m
+                print(f"    * {color_str}{bck}{c.d} [{', '.join(bcv[1])}]")
             sys.exit()
         else:
             raise Exception(f"BATCH {batch} unknow [help for a list of possible batch]")
@@ -163,13 +171,15 @@ def read_SYSargv(batch_codes, arg2split):
             errors.append(f"{c.r}{attr}{c.d}")
 
     if len(errors) > 0: 
-        raise Exception(f"{', '.join(errors)} missing")
+        print(f"Making batch stop : argv {', '.join(errors)} missing")
+        sys.exit()
 
 
     # set default args
     ARGS.discobot = True if "discobot" in dir(ARGS) else False
     ARGS.mult = False if "nomult" in dir(ARGS) or "local" in dir(ARGS) else True
     ARGS.local = True if "local" in dir(ARGS) else False
+    ARGS.make_all = True if "makeall" in sys.argv else False
     ARGS.device = batch_codes[batch][2] if "device" not in dir(ARGS) else "cpu"
 
     if "load" not in dir(ARGS) : ARGS.load = ["None"]
@@ -186,6 +196,13 @@ def read_SYSargv(batch_codes, arg2split):
 
 
 
+
+
+
+
+###########
+########### MAKE PARTITION FOR LONGUE CODE
+###########
 
 
 def give_partition(n, ncpu):
@@ -239,6 +256,10 @@ def codes_with_ncpu(ncpu, batch_names, codes):
             new_batch_names.append(f"{batch_name}_{b}_{p}")
 
     return new_batch_names, new_codes
+
+
+
+
 
 
 
@@ -368,7 +389,7 @@ def verify_batch(batch_name, args):
         missings += verify_model_training(args)
         missings += verify_test_folder(args)
 
-    elif batch_name == "apply_spectractor":
+    elif batch_name in ["apply_spectractor", "search@analyse"]:
 
         missings += verify_test_folder(args)
 
@@ -380,7 +401,7 @@ def verify_batch(batch_name, args):
 
         missings += verify_apply(args)
 
-    elif batch_name in ["analyse_atmo", "search@analyse_atmo"]:
+    elif batch_name in ["analyse_atmo", "search@extract_atmo"]:
 
         missings += verify_extract_atmo(args)
 
@@ -398,13 +419,79 @@ def verify_batch(batch_name, args):
             print(f"    * {c.ti}{missing}{c.d}")
 
         print(f"{c.r}##########{c.d}\n")
-
-        raise Exception(f"Some missings results ({len(missings)})")
+        print(f"Making batch stop : some missings results ({len(missings)})")
+        sys.exit()
 
     else:
 
         pass
 
+
+
+
+
+
+
+
+##########
+########## SEARCHING BATCH
+##########
+
+
+def search_analyse(sysArgv, make_all=False):
+
+    Args = get_argv(sysArgv[1:], prog="analyse_atmo")
+    batchs = list()
+    remake = list()
+
+    for pf in os.listdir(f"./results/output_simu/{Args.test}"):
+
+        if pf.startswith("pred_"):
+
+            # verify if we need to make this pf
+            if os.path.exists(f"./results/analyse/{Args.score}/{pf}/{Args.test}"):
+                remake.append(True)
+                if not make_all : run = False
+                else : run = True
+            else:
+                remake.append(False)
+                run = True
+
+            # make if needed
+            if run:
+                _, model_, loss_, trainseed_, lr_, *_ = pf.split("_")
+                batchs.append(f"analyse model={model_} loss={loss_} train={trainseed_} test={Args.test} lr={lr_} score={Args.score} load=None")
+
+    return batchs, remake    
+
+
+def search_extract_atmo(sysArgv, make_all=False):
+
+    Args = get_argv(sysArgv[1:], prog="analyse_atmo")
+    batchs = list()
+    remake = list()
+
+    save_folders = [pf for pf in os.listdir(f"./results/output_simu/{Args.test}/atmos_params_fit") if not "." in pf]
+    pred_folders = [pf for pf in os.listdir(f"./results/output_simu/{Args.test}") if not "." in pf and pf.startswith("pred_")] + [f"pred_True_x_x_0e+00", f"pred_SpectractorFile_x_x_0e+00"]
+
+    for pf in pred_folders:
+
+        # verify if we need to make this pf
+        if pf in save_folders:
+            remake.append(True)
+            if not make_all : run = False
+            else : run = True
+        else:
+            remake.append(False)
+            run = True
+
+        # make if needed
+        if run:
+            _, model_, loss_, trainseed_, lr_ = pf.split("_")
+            batchs.append(f"extract_atmo model={model_} loss={loss_} train={trainseed_} test={Args.test} lr={lr_} load=None")
+        
+
+    return batchs, remake
 
 
 
@@ -425,8 +512,9 @@ if __name__ in "__main__":
         "analyse"              : ["analyses/analyse_test.py",     ["model", "loss", "train", "lr", "tel", "test", "seed", "score"], "cpu"],
         "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test", "seed"],          "cpu"],
         "analyse_atmo"         : ["extractAtmos/analyseAtmo.py",  ["tel", "test", "seed"],                                          "cpu"],
-    
-        "search@analyse_atmo"  : ["search_missing_extraction",    ["test", "tel", "seed"],                                          "cpu"],
+        
+        "search@analyse"       : [search_analyse,                 ["tel", "test", "seed", "score"],                                 "cpu"],
+        "search@extract_atmo"  : [search_extract_atmo,            ["test", "tel", "seed"],                                          "cpu"],
     }
 
     # batch can accept multiple cpu usage
@@ -505,7 +593,7 @@ if __name__ in "__main__":
             batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{lr}_{e}_{load}")
 
     # create batch for apply
-    elif batch_name == "apply":
+    elif batch == "apply":
 
         for model, loss, train, lr, tel, test, seed, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["load"]):
 
@@ -515,7 +603,7 @@ if __name__ in "__main__":
             batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{test_folder}_{lr}_{load}")
 
     # create batch for apply_spectractor
-    elif batch_name == "apply_spectractor":
+    elif batch in "apply_spectractor":
 
         for tel, test, seed in szip(args.a2s["tel"], args.a2s["test"], args.a2s["seed"]):
 
@@ -524,7 +612,7 @@ if __name__ in "__main__":
             batch_names.append(f"{batch}_{test_folder}")
 
     # create batch for analyse
-    elif batch_name == "analyse":
+    elif batch == "analyse":
 
         for model, loss, train, lr, tel, test, seed, score, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["score"], args.a2s["load"]):
 
@@ -544,12 +632,21 @@ if __name__ in "__main__":
             batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{test_folder}_{lr}_{load}")
 
     # create batch for analyse atmo
-    elif batch in ["analyse_atmo", "search@analyse_atmo"]:
+    elif batch in ["analyse_atmo", "search@extract_atmo"]:
 
         for tel, test, seed in szip(args.a2s["tel"], args.a2s["test"], args.a2s["seed"]):
 
             test_folder = f"test{args.testsize}{tel}-{seed}"
             codes.append(f"{batch_code} test={test_folder}")
+            batch_names.append(f"{batch}_{test_folder}")
+
+    # create batch for search@analyse
+    elif batch in "search@analyse":
+
+        for tel, test, seed, score in szip(args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["score"]):
+
+            test_folder = f"test{args.testsize}{tel}-{seed}"
+            codes.append(f"{batch_code} test={test_folder} score={score}")
             batch_names.append(f"{batch}_{test_folder}")
 
     else:
@@ -574,41 +671,37 @@ if __name__ in "__main__":
 
 
 
-    ### use module function
+    ### use searching batch
     if "@" in batch:
 
-        sub_batch = batch.split("@")[1]
-
-        module_name = batch_codes[sub_batch][0][:-3].replace("/", ".")
-        function_name = batch_codes[batch][0]
-
-        print(f"{c.y}INFO : Import module {module_name} ...{c.d}")
-        module = importlib.import_module(module_name)
-
-        print(f"{c.y}INFO : Import function {function_name} from module {module_name}{c.d}")
-        function = getattr(module, function_name)
-
+        function = batch_codes[batch][0]
         search_batchs = list()
+        remake_batchs = list()
 
         for batch_name, code in zip(batch_names, codes):
 
             print(f"{c.y}INFO : CODE sysArgv : `{code}`{c.d}")
-            search_batchs += function(code.split(" "))
-
+            new_search, new_remake = function(code.split(" "), args.make_all)
+            search_batchs += new_search
+            remake_batchs += new_remake
 
         # create new batchs from the searching
         codes = list()
         batch_names = list()
 
-        for i, sb in enumerate(search_batchs):
+        for i, (sb, rb) in enumerate(zip(search_batchs, remake_batchs)):
             batch = sb.split(" ")[0]
             argsi = " ".join(sb.split(" ")[1:])
             code = f"{batch_codes[batch][0]} {argsi}"
             batch_name = f"{batch}_{i+1}sur{len(search_batchs)}"
 
-            print(f"New batch [{c.tu}{batch_name}{c.d}] : {c.ti}{c.lm}{code}{c.d}")
+            remake_str = f" {c.b}{c.tb}{c.ti}{c.tu}REMAKE{c.d}" if rb and args.make_all else ""
+
+            print(f"New batch [{c.tu}{batch_name}{c.d}] : {c.ti}{c.lm}{code}{c.d}{remake_str}")
             codes.append(code)
             batch_names.append(batch_name)
+
+        print(f"Batch find : {c.lm}{len(codes)}{c.d} [already make : {np.sum(remake_batchs)}]")
 
 
         # if we want multiple cpu : ncpu=<number of cpu>
@@ -631,8 +724,10 @@ if __name__ in "__main__":
             sys.exit()
 
 
+
+
     ### Construction of SLURM file:
-    print(f"construction of SLURM FILE")
+    print(f"Construction of batches ...")
 
     if not args.mult:
 

@@ -120,6 +120,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     os.mkdir(f"{pathSave}/{Args.test}/html")
     os.mkdir(f"{pathSave}/{Args.test}/graph")
     os.mkdir(f"{pathSave}/{Args.test}/remember")
+    os.mkdir(f"{pathSave}/{Args.test}/cross_analyse")
 
     for t in targets:
         os.mkdir(f"{pathSave}/{Args.test}/{t}")
@@ -391,7 +392,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                 ax.set_xlabel(f"Score {score}")
                 ax.set_ylabel(f"Residus for {atmo}")
 
-            plt.savefig(f"{pathSave_cross}/cross_analyse.png")
+            plt.savefig(f"{pathSave}/{Args.test}/cross_analyse/cross_analyse {savef}.png")
             plt.close()
 
 
