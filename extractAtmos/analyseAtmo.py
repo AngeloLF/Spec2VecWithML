@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys, json, os, shutil
 import coloralf as c
-# import alftool as alf
 from scipy import interpolate
 from time import time
 from copy import deepcopy
@@ -24,6 +23,37 @@ def calcul_dRMS(r, dr):
 
     N = np.sum(~np.isnan(r))
     return 1 / (N * calcul_RMS(r)) * np.sqrt(np.nansum(r**2 * dr**2))
+
+def read_atmos(file):
+
+    with open(file, "r") as f:
+        data = f.read().split("\n")
+
+    num = np.zeros(len(data)).astype(str)
+    val = np.zeros(len(data)).astype(float)
+
+    for i, line in enumerate(data):
+        num[i], val[i] = line.replace(" ", "").split(":")
+
+    argsort = np.argsort(num)
+
+    return num[argsort], val[argsort]
+
+def read_score(file):
+
+    with open(file, "r") as f:
+        data = f.read().split("\n")
+
+    num = np.zeros(len(data)).astype(str)
+    val = np.zeros(len(data)).astype(float)
+
+    for i, line in enumerate(data):
+        num_i, val[i] = line.replace(" ", "").split(":")
+        num[i] = num_i.split("_")[1].split(".")[0]
+
+    argsort = np.argsort(num)
+
+    return num[argsort], val[argsort]
 
 
 
@@ -324,6 +354,45 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
 
 
+
+    ### cross analyse
+    score = "chi2"
+
+    for savef in saveFolders:
+
+        model = savef.split("_")[1]
+
+        if model not in ["True", "SpectractorFile"]:
+
+            # path to save cross figure
+            pathSave_cross = f"./results/analyse/extractAtmos/{Args.test}/remember/{savef}"
+
+            # find atmos extraction : line format : `<n> : XXX.XXX`
+            path_remember_atmos = f"./results/analyse/extractAtmos/{Args.test}/remember/{savef}"
+            atmos = ["vaod", "ozone", "pwv"]
+
+            # find score : line format -> `spectrum_<n>.npy : XXX.XXX`
+            path_remember_score = f"./results/analyse/{score}/{savef}/{Args.test}"
+            num_score, data_score = read_score(f"{path_remember_score}/remember_score_classic.txt")
+            num_score_norma, data_score_norma = read_score(f"{path_remember_score}/remember_score_norma.txt")
+
+            fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+            fig.suptitle(f"Cross analyse for {savef.replace(' ', '')}", fontweight="bold")
+
+            for atmo, ax in zip(atmos, axes):
+
+                num_atmo, data_atmo = read_atmos(f"{path_remember_atmos}/{atmo}.txt")
+
+                if (num_score != num_atmo).all():
+                    raise Exception(f"Num extract from atmo & score is not the same ...")
+
+                ax.plot(data_score, data_atmo, ls="", marker="+", c="r")
+                ax.set_title(f"For {atmo}")
+                ax.set_xlabel(f"Score {score}")
+                ax.set_ylabel(f"Residus for {atmo}")
+
+            plt.savefig(f"{pathSave_cross}/cross_analyse.png")
+            plt.close()
 
 
 if __name__ == "__main__":

@@ -144,8 +144,18 @@ python jobAndBots/making_batch.py extract_atmo model=Spectractor,spectractorfile
 ```
 
 
+### Atmo analyse
 
+Analyse of atmo extraction, for a test folder. Make plots and HTML in `./results/analyse/extractAtmos/<test_folder>`
 
+For analyse:
+  * `test` : list of test to apply (like *x*, *ot*, ...)
+  * `tel` : list of telescope (like *auxtel*, *ctio*, *stardice*, ...)
+  * `seed` : seed
+
+```bash
+python jobAndBots/making_batch.py extract_atmo test=x tel=auxtel seed=413
+```
 
 
 

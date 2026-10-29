@@ -172,11 +172,12 @@ def get_argv(argv, prog=None, correction=False, show=False):
 
 
 
-    if prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
+    if prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training", "cross_analyse"]:
 
         Args.model_loss = f"{Args.model}_{Args.loss}"
         Args.fulltrain_str = f"{Args.from_prefixe}{Args.train}"
         Args.fullname = f"{Args.model}_{Args.loss}_{Args.fulltrain_str}_{Args.lr_str}"
+        Args.pred_folder = f"pred_{Args.model}_{Args.loss}_{Args.fulltrain_str}_{Args.lr_str}"
 
         Args.wl = np.arange(300, 1100) if Args.model not in ["ViTESoS"] else np.arange(0, 1024)
         Args.folder_output = "spectrum" if Args.model not in ["ViTESoS"] else "spectrumPX"
