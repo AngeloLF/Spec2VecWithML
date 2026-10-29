@@ -1,13 +1,25 @@
 from types import SimpleNamespace
-import os, sys, shutil
+from itertools import product as szip
+import os, sys, shutil, importlib
 import params
 import coloralf as c
 import numpy as np
+
+sys.path.append('./')
 
 
 
 
 def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, ext="slurm", mem=None, local=False, gpu_device="v100", nbj=None):
+    """
+    Function to create batch
+
+    Param:
+        * batch name [str] : name of the batch
+        * codes [str or list of str] : codes to compute
+        * device [str] : cpu or gpu
+        TOMAKE
+    """
 
 
     ### ENTETE
@@ -106,31 +118,37 @@ def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, e
 
 
 
+
 def read_SYSargv(batch_codes, arg2split):
+    """
+    Function to read the sys.argv for create batch
+    """
 
-
-    ARGS = SimpleNamespace()
+    # create var
+    ARGS = SimpleNamespace(a2s=dict())
     batch = sys.argv[1]
     argv = sys.argv[2:]
 
 
+    # if batch not in batch_codes
     if batch not in batch_codes.keys(): 
-        if batch == "help": 
+        if batch in ["help", "h", "-h", "--h"]: 
             print(f"Possible batch :")
             for bck, bcv in batch_codes.items():
                 print(f"    * {c.g}{bck}{c.d} [{', '.join(bcv[1])}]")
             sys.exit()
-        else: 
+        else:
             raise Exception(f"BATCH {batch} unknow [help for a list of possible batch]")
 
 
+    # view argv
     for arg in argv:
 
         if "=" in arg:
 
             k, v = arg.split("=")
 
-            if k in arg2split : ARGS.__setattr__(k, v.split(","))
+            if k in arg2split : ARGS.a2s[k] = v.split(",")
             else : ARGS.__setattr__(k, v) 
 
         else:
@@ -138,29 +156,35 @@ def read_SYSargv(batch_codes, arg2split):
             ARGS.__setattr__(arg, None)
 
 
+    # Show errors if needed args missing
     errors = list()
     for attr in batch_codes[batch][1]:
-        if attr not in dir(ARGS) : errors.append(attr)
+        if attr not in ARGS.a2s: 
+            errors.append(f"{c.r}{attr}{c.d}")
 
-    if len(errors) > 0 : raise Exception(f"{', '.join(errors)} missing")
+    if len(errors) > 0: 
+        raise Exception(f"{', '.join(errors)} missing")
+
+
+    # set default args
+    ARGS.discobot = True if "discobot" in dir(ARGS) else False
+    ARGS.mult = False if "nomult" in dir(ARGS) or "local" in dir(ARGS) else True
+    ARGS.local = True if "local" in dir(ARGS) else False
+    ARGS.device = batch_codes[batch][2] if "device" not in dir(ARGS) else "cpu"
+
+    if "load" not in dir(ARGS) : ARGS.load = ["None"]
+    if "mem" not in dir(ARGS) : ARGS.mem = None
+    if "gd" not in dir(ARGS) : ARGS.gd = "v100"
+    if "nbj" not in dir(ARGS) : ARGS.nbj = None
+    if "validsize" not in dir(ARGS) : ARGS.validsize = "2k" if not ARGS.local else "128"
+    if "testsize" not in dir(ARGS) : ARGS.testsize = "1k" if not ARGS.local else "8"
+    if "load" not in ARGS.a2s.keys() : ARGS.a2s["load"] = ["None"]
 
 
     return batch, ARGS
 
 
 
-def addJob2args(ARGS, model, loss, train, lr, load, test, score=None):
-
-    ARGS.list_model.append(model)
-    ARGS.list_loss.append(loss)
-    ARGS.list_train.append(train)
-    ARGS.list_lr.append(lr)
-    ARGS.list_load.append(load)
-    ARGS.list_test.append(test)
-    ARGS.nb += 1
-    if score is not None : ARGS.list_score.append(score)
-    
-    return ARGS
 
 
 
@@ -185,426 +209,453 @@ def give_partition(n, ncpu):
     return partition
 
 
+def search_Ntest_from_code(code):
 
+    test = None
 
+    for ele in code.split(" "):
+        if ele.startswith("test="):
+            test = ele.split("=")[1]
 
-def findJob(args, states_path="./results/Spec2vecModels_Results"):
+    if test is None:
+        raise Exception(f"No test found in code {code}.")
 
-    if "score" not in dir(args):
+    return len(os.listdir(f"./results/output_simu/{test}/image"))
 
-        if "FOPA" in args.modelwl[0] or "FOBIQ" in args.modelwl[0]:
-            print(f"{c.ly}INFO : in findJob, score is not indicated (but FOPA/FOBIQ detected) -> def sfopa")
-            args.score = ["sfopa"]
-        else:
-            print(f"{c.ly}INFO : in findJob, score is not indicated -> def L1,chi2")
-            args.score = ["L1", "chi2"]
 
-    if "test" not in dir(args):
+def codes_with_ncpu(ncpu, batch_names, codes):
 
-        if "FOPA" in args.modelwl[0] or "FOBIQ" in args.modelwl[0]:
-            print(f"{c.ly}INFO : in findJob, test is not indicated (but FOPA/FOBIQ detected) -> def testAtmo1k")
-            args.test = ["testAtmo1k"]
-        else:
-            print(f"{c.ly}INFO : in findJob, test is not indicated -> def test1k,test1kOT,test1kExt")
-            args.test = ["test1k", "test1kOT", "test1kExt"]
+    new_batch_names = list()
+    new_codes = list()
 
-    ARGS_APPLY = SimpleNamespace()
-    ARGS_ANALYSE = SimpleNamespace()
+    for batch_name, code in zip(batch_names, codes):
 
+        n = search_Ntest_from_code(code)
+        partition = give_partition(n, int(ncpu))
+        begin_with = np.concatenate((np.array([0]), np.cumsum(partition)[:-1])) # [3, 3, 2, 2] to [0, 3, 6, 8]
 
-    for ARGS in [ARGS_APPLY, ARGS_ANALYSE]:
+        for p, b in zip(partition, begin_with):
+            new_codes.append(f"{code} range={b}_{p}")
+            new_batch_names.append(f"{batch_name}_{b}_{p}")
 
-        ARGS.list_model = list()
-        ARGS.list_loss = list()
-        ARGS.list_train = list()
-        ARGS.list_lr = list()
-        ARGS.list_load = list()
-        ARGS.list_test = list()
-        ARGS.list_score = list()
-        ARGS.nb = 0
+    return new_batch_names, new_codes
 
 
-    allModelWL = list(set(args.modelwl))
 
 
-    for modelwl in allModelWL:
-        
-        model, loss = modelwl.split("_")
-        print(f"\n{c.y}Analyseof model {model} [{loss}]{c.d}")
+##########
+########## Verify if there are missings results to make the wanted batch
+##########
 
-        for state in os.listdir(f"{states_path}/{modelwl}/states"):
 
-            if "_best.pth" in state:
+def verify_simu(args):
 
-                subs = state[:-9]
-                    
-                if subs.count("_") == 1: 
-                    train, lr = subs.split("_")
-                    load = "None"
-                    pred_folder = f"pred_{model}_{loss}_{train}_{lr}"
-                elif subs.count("_") == 3:
-                    loadtrain, loadlr, train, lr = subs.split("_")
-                    load = f"{loadtrain}_{loadlr}"
-                    pred_folder = f"pred_{model}_{loss}_{load}_{train}_{lr}"
-                else:
-                    raise Exception(f"WARNING [making_sbatch.py] : State {state} counts `_` not in [1, 3]")
+    return list()
 
-                print(f"{c.ly}Analyseof : detect {subs} -> {train} > {lr} > {load}{c.d}")
 
-                for otest in args.test:
+def verify_train_folder(args):
 
-                    test = otest if "no0" not in train else f"{otest}no0"
-                    if test == "testAtmo1k" and "2Atmo" in train : test = "test2Atmo1k"
+    missings = list()
 
-                    if pred_folder in os.listdir(f"./results/output_simu/{test}"):
-                        print(f"{c.lg}- Test {test} apply{c.d}")
+    for train, tel, seed in szip(args.a2s["train"], args.a2s["tel"], args.a2s["seed"]):
 
-                        for score in args.score:
+        train_folder = f"train{train}{tel}-{seed}"
+        valid_folder = f"valid{args.validsize}{tel}-{seed}"
 
-                            if pred_folder in os.listdir(f"./results/analyse/{score}") and test in os.listdir(f"./results/analyse/{score}/{pred_folder}") and ("resume.txt" in os.listdir(f"./results/analyse/{score}/{pred_folder}/{test}") or "resume.json" in os.listdir(f"./results/analyse/{score}/{pred_folder}/{test}"))  :
-                                print(f"{c.lg}  |-- score {score} analyse{c.d}")
-                            else:
-                                print(f"{c.lr}  |-- score {score} not analyse{c.d}")
-                                ARGS_ANALYSE = addJob2args(ARGS_ANALYSE, model, loss, train, lr, load, test, score)
+        if train_folder not in os.listdir(f"./results/output_simu"):
+            missings.append(f"Train : ./results/output_simu/{train_folder}")
 
+        if valid_folder not in os.listdir(f"./results/output_simu"):
+            missings.append(f"Valid : ./results/output_simu/{valid_folder}")
 
-                    else:
-                        print(f"{c.r}- Test {test} not apply{c.d}")
-                        ARGS_APPLY = addJob2args(ARGS_APPLY, model, loss, train, lr, load, test)
+    return missings
 
 
+def verify_test_folder(args):
 
-    choice = None
+    missings = list()
 
-    while choice not in ["", "analyse", "apply", "analyseFOPA"]:
+    for test, tel, seed in szip(args.a2s["test"], args.a2s["tel"], args.a2s["seed"]):
 
-        print(f"Number of job `apply`   : {ARGS_APPLY.nb}")
-        print(f"Number of job `analyse` : {ARGS_ANALYSE.nb}")
-        choice = input(f"Make anything ? (an/analyse or ap/apply) : ")
+        test_folder = f"test{args.testsize}{test}{tel}-{seed}"
 
-        if choice in ["an", "analyse"] : choice = "analyse"
-        elif choice in ["ap", "apply"] : choice = "apply" 
+        if test_folder not in os.listdir(f"./results/output_simu"):
+            missings.append(f"Test : ./results/output_simu/{test_folder}")
 
-    if "FOPA" in args.modelwl[0] or "FOBIQ" in args.modelwl[0] and choice == "analyse" : choice = "analyseFOPA"
+    return missings
 
-    args.ARGS_APPLY = ARGS_APPLY
-    args.ARGS_ANALYSE = ARGS_ANALYSE
-    args.findjob_choice = choice
 
-    return args
+def verify_model(args):
 
+    missings = list()
 
+    for model in args.a2s["model"]:
 
+        if f"{model}.py" not in os.listdir(f"./models/architecture"):
+            missings.append(f"Model : ./models/architecture/{model}.py")
 
+    return missings
 
 
+def verify_model_training(args):
 
+    missings = list()
 
-if __name__ in "__main__":
+    for model, loss, train, tel, seed, lr in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["tel"], args.a2s["seed"], args.a2s["lr"]):
 
+        model_folder = f"./results/models_output/{model}_{loss}/states"
+        model_training = f"train{train}{tel}-{seed}_{lr}_best.pth"
 
-    batch_codes = {
-        "flash"                : ["None",                         ["jobname", "code"]],
-        "simu"                 : ["specSimulator/main_simu.py",   ["nsimu", "tel", "type", "seed"]],
-        "training"             : ["models/train_models.py",       ["model", "loss", "train", "lr", "tel", "e", "seed"]],
-        "apply"                : ["applies/apply_model.py",       ["model", "loss", "train", "lr", "tel", "test", "seed"]],
-        "apply_spectractor"    : ["applies/apply_spectractor.py", ["test", "tel", "seed"]],
-        "analyse"              : ["analyses/analyse_test.py",     ["model", "loss", "train", "lr", "tel", "test", "seed", "score"]],
-        "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test", "seed"]],
-        "analyse_atmo"         : ["extractAtmos/analyseAtmo.py",  ["tel", "test", "seed"]],
+        if model_training not in os.listdir(model_folder):
+            missings.append(f"Training : {model_folder}/{model_training}")
 
-        "analyseFOPA"          : ["analyses/analyse_FOPA.py",     ["model", "loss", "train", "lr", "tel", "test", "score"]],
-        "findjob"              : ["None",                         ["modelwl"]] # Model with loss like `SCaM_chi2`
-    }
+    return missings
 
-    arg2split = ["type", "model", "modelwl", "loss", "train", "test", "lr", "load", "nsimu", "score", "tel", "seed"]
 
-    batch, args = read_SYSargv(batch_codes, arg2split)
-    if batch == "findjob" : args = findJob(args)
+def verify_apply(args):
 
-    args.discobot = True if "discobot" in dir(args) else False
-    args.mult = False if "nomult" in dir(args) else True
-    args.local = True if "local" in dir(args) else False
+    missings = list()
 
-    if "load" not in dir(args) : args.load = ["None"]
-    if "mem" not in dir(args) : args.mem = None
-    if "gd" not in dir(args) : args.gd = "v100"
-    if "nbj" not in dir(args) : args.nbj = None
-    if "valid" not in dir(args) : args.valid = "2k"
-    if "testsize" not in dir(args) : args.testsize = "1k"
+    for model, loss, train, tel, seed, lr, test in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["tel"], args.a2s["seed"], args.a2s["lr"], args.a2s["test"]):
 
-    batch_names = list()
-    codes = list()
-    make_jobs = True
+        test_folder = f"./results/output_simu/test{args.testsize}{test}{tel}-{seed}"
+        pred_folder = f"pred_{model}_{loss}_train{train}{tel}-{seed}_{lr}"
 
+        if not os.path.exists(test_folder):
+            missings.append(f"Test not exist : {test_folder}")
+        elif pred_folder not in os.listdir(test_folder):
+            missings.append(f"Pred not exist : {test_folder}/{pred_folder}")
+        elif len(os.listdir(f"{test_folder}/image")) > len(os.listdir(f"{test_folder}/{pred_folder}")):
+            nbMiss = len(os.listdir(f"{test_folder}/image")) - len(os.listdir(f"{test_folder}/{pred_folder}"))
+            missings.append(f"Pred miss {nbMiss} : {test_folder}/{pred_folder}")
 
+    return missings
 
-    if batch == "flash":
 
-        device = "cpu"
+def verify_extract_atmo(args):
 
-        codes.append(args.code)
-        batch_names.append(args.jobname)
+    missings = list()
 
+    for tel, seed, test in szip(args.a2s["tel"], args.a2s["seed"], args.a2s["test"]):
 
+        test_folder = f"./results/output_simu/test{args.testsize}{test}{tel}-{seed}"
 
-    elif batch == "simu":
+        if not os.path.exists(test_folder):
+            missings.append(f"Test not exist : {test_folder}")
+        elif "atmos_params_fit" not in os.listdir(test_folder):
+            missings.append(f"Extract atmos not exist : {test_folder}/atmos_params_fit")
+        elif len(os.listdir(f"{test_folder}/atmos_params_fit")) == 0:
+            missings.append(f"Extract atmos empty : {test_folder}/atmos_params_fit")
 
-        device = "cpu"
+    return missings
 
-        # si on a indiquer seulement un telescope pour plusieur simu, on attribut ce telescope a tout le monde
-        if len(args.tel) == 1 and len(args.type) > 1:
-            args.tel *= len(args.type)
 
+def verify_batch(batch_name, args):
 
-        for n_i, type_i, tel_i in zip(args.nsimu, args.type, args.tel):
+    missings = list()
 
-            simupi = ""
-            set_i = "set0"
-            psf_i = "moffat2d"
+    if batch_name == "simu":
 
-            if int(n_i) < 1000:
-                str_n = n_i
-            else:
-                str_n = f"{int(int(n_i)/1000)}k"
+        missings += verify_simu(args)
 
+    elif batch_name == "training":
 
-            if type_i == "train":
-                filename = f"train{str_n}{tel_i}"
+        missings += verify_train_folder(args)
+        missings += verify_model(args)
 
-            elif type_i == "valid":
-                filename = f"valid{str_n}{tel_i}"
+    elif batch_name == "apply":
 
-            elif type_i == "test":
-                filename = f"test{str_n}{tel_i}"
+        missings += verify_model_training(args)
+        missings += verify_test_folder(args)
 
-            elif type_i.lower() == "testext":
-                filename = f"test{str_n}EXT{tel_i}"
-                simupi = "test"
+    elif batch_name == "apply_spectractor":
 
-            elif type_i.lower() == "testot":
-                filename = f"test{str_n}OT{tel_i}"
-                set_i = "set1"
+        missings += verify_test_folder(args)
 
-            elif type_i.lower() == "testgauss":
-                filename = f"test{str_n}GAUSSIAN{tel_i}"
-                psf_i = "gaussian2d"
+    elif batch_name == "analyse":
 
-            elif type_i.lower() == "testna":
-                filename = f"test{str_n}NA{tel_i}"
-                psf_i = "moffat2d_na"
+        missings += verify_apply(args)
 
-            elif type_i.lower() == "testgaussna":
-                filename = f"test{str_n}GAUSSIANNA{tel_i}"
-                psf_i = "gaussian2d_na"
+    elif batch_name == "extract_atmo":
 
-            elif type_i.lower() == "teststardice":
-                filename = f"test{str_n}STARDICE{tel_i}"
-                psf_i = "stardice"
+        missings += verify_apply(args)
 
-            else:
-                raise Exception(f"Type {type_i.lower()} unknow")
+    elif batch_name in ["analyse_atmo", "search@analyse_atmo"]:
 
-
-            for seed_i in args.seed:
-
-                codes.append(f"{batch_codes['simu'][0]} nsimu={n_i} f={filename}-{seed_i} set={set_i} tel={tel_i} seed={seed_i} psf={psf_i} {simupi}")
-                batch_names.append(f"{batch}_{filename}-{seed_i}")
-
-
-
-    elif batch == "findjob" and args.findjob_choice == "apply":
-
-        device = "cpu"
-
-        for model, loss, train, lr, load, test in zip(args.ARGS_APPLY.list_model, args.ARGS_APPLY.list_loss, args.ARGS_APPLY.list_train, args.ARGS_APPLY.list_lr, args.ARGS_APPLY.list_load, args.ARGS_APPLY.list_test):
-
-            codes.append(f"{batch_codes['apply'][0]} model={model} loss={loss} train={train} test={test} lr={lr} load={load}")
-            batch_names.append(f"apply_{model}_{loss}_{train}_{test}_{lr}_{load}")
-
-
-
-    elif batch == "findjob" and args.findjob_choice == "analyse":
-
-        device = "cpu"
-
-        for model, loss, train, lr, load, test, score in zip(args.ARGS_ANALYSE.list_model, args.ARGS_ANALYSE.list_loss, args.ARGS_ANALYSE.list_train, args.ARGS_ANALYSE.list_lr, args.ARGS_ANALYSE.list_load, args.ARGS_ANALYSE.list_test, args.ARGS_ANALYSE.list_score):
-        
-            codes.append(f"{batch_codes['analyse'][0]} model={model} train={train} test={test} loss={loss} lr={lr} score={score} load={load}")
-            batch_names.append(f"analyse_{model}_{loss}_{train}_{test}_{lr}_{score}_{load}")
-
-
-
-    elif batch == "findjob" and args.findjob_choice == "analyseFOPA":
-
-        device = "cpu"
-
-        for model, loss, train, lr, load, test, score in zip(args.ARGS_ANALYSE.list_model, args.ARGS_ANALYSE.list_loss, args.ARGS_ANALYSE.list_train, args.ARGS_ANALYSE.list_lr, args.ARGS_ANALYSE.list_load, args.ARGS_ANALYSE.list_test, args.ARGS_ANALYSE.list_score):
-        
-            codes.append(f"{batch_codes['analyseFOPA'][0]} model={model} train={train} test={test} loss={loss} lr={lr} score={score} load={load}")
-            batch_names.append(f"analyse_{model}_{loss}_{train}_{test}_{lr}_{score}_{load}")
-
-
-
-    elif batch == "findjob":
-
-        make_jobs = False
-
-
-
-    elif batch == "apply_spectractor":
-
-        device = "cpu" if "gpu" not in sys.argv else "gpu"
-
-        for tel in args.tel:
-
-            for seed_i in args.seed:
-
-                for str_test in args.test:
-                    test = f"test{args.testsize}{tel}-{seed_i}" if str_test == "x" else f"test{args.testsize}{str_test.upper()}{tel}-{seed_i}" 
-                    # Check test
-                    if test not in os.listdir(f"./results/output_simu") and "passall" not in sys.argv:
-                        raise Exception(f"Test folder {test} not in ./results/output_simu")
-                    elif "passall" not in sys.argv:
-                        ntest = len(os.listdir(f"./results/output_simu/{test}/image"))
-                        print(f"Info : {ntest} images in {test}")
-                    else:
-                        ntest = None
-
-                    # if we want multiple cpu
-                    if "ncpu" in dir(args):
-                        print(f"{c.y}INFO [new_making_batch.py] : reset Spectractor folders for {test}{c.d}")
-                        for fold in ["image_fits", "spectrum_fits", "pred_Spectractor_x_x_0e+00", "spectractor_exceptions"]:
-                            if fold in os.listdir(f"./results/output_simu/{test}") : shutil.rmtree(f"./results/output_simu/{test}/{fold}")
-                            os.mkdir(f"./results/output_simu/{test}/{fold}")
-                        partition = give_partition(ntest, int(args.ncpu))
-                        begin_with = np.concatenate((np.array([0]), np.cumsum(partition)[:-1])) # [3, 3, 2, 2] to [0, 3, 6, 8]
-                        for p, b in zip(partition, begin_with):
-                            codes.append(f"{batch_codes['apply_spectractor'][0]} {test} range={b}_{p}")
-                            batch_names.append(f"{batch}_{test}_{b}_{p}")
-                    else:
-                        codes.append(f"{batch_codes['apply_spectractor'][0]} {test}")
-                        batch_names.append(f"{batch}_{test}")
-
+        missings += verify_extract_atmo(args)
 
     else:
 
-        model_pass = ["Spectractor", "true", "spectractorfile"]
-
-        for model in args.model:
-
-            # Check model
-            if f"{model}.py" not in os.listdir(f"./models/architecture") and model not in model_pass:
-                raise Exception(f"The architecture model {model} unknow")
-
-            for loss in args.loss:
-
-                for tel in args.tel:
-
-                    for seed in args.seed:
-
-                        for str_train in args.train:
-
-                            # Check train & valid
-                            train = f"train{str_train}{tel}-{seed}" if model not in model_pass else str_train
-                            if train not in os.listdir(f"./results/output_simu") and model not in model_pass and "passall" not in sys.argv:
-                                raise Exception(f"Train folder {train} not in ./results/output_simu")
-                            valid = f"valid{args.valid}{tel}-{seed}"
-                            if valid not in os.listdir(f"./results/output_simu") and model not in model_pass and "passall" not in sys.argv:
-                                raise Exception(f"Valid folder {valid} not in ./results/output_simu")
-
-                            for lr in args.lr:
-
-                                for load in args.load:
-
-                                    if batch == "training":
-
-                                        device = "gpu"
-                                        codes.append(f"{batch_codes['training'][0]} model={model} loss={loss} train={train} valid={valid} epoch={args.e} lr={lr} load={load}")
-                                        batch_names.append(f"{batch}_{model}_{loss}_{train}_{lr}_{load}")
-
-                                    else:
-
-                                        for str_test in args.test:
-
-                                            if str_test == "x":
-                                                test = f"test{args.testsize}{tel}-{seed}"
-                                            elif str_test in ["ext", "ot", "gaussian", "gaussianna", "na", "stardice"]:
-                                                test = f"test{args.testsize}{str_test.upper()}{tel}-{seed}"
-                                            else:
-                                                test = f"test{args.testsize}{str_test.upper()}{tel}-{seed}"
-
-                                            # Check test
-                                            if test not in os.listdir(f"./results/output_simu") and "passall" not in sys.argv:
-                                                raise Exception(f"Test folder {test} not in ./results/output_simu")
-                                            elif "passall" not in sys.argv:
-                                                ntest = len(os.listdir(f"./results/output_simu/{test}/image"))
-                                                print(f"Info : {ntest} images in {test}")
-                                            else:
-                                                try:
-                                                    ntest = len(os.listdir(f"./results/output_simu/{test}/image"))
-                                                    print(f"Info : {ntest} images in {test}")
-                                                except:
-                                                    ntest = None
-
-                                            if batch == "apply":
-
-                                                device = "cpu" if "gpu" not in sys.argv else "gpu"
-                                                codes.append(f"{batch_codes['apply'][0]} model={model} loss={loss} train={train} test={test} lr={lr} load={load} {device}")
-                                                batch_names.append(f"{batch}_{model}_{loss}_{train}_{test}_{lr}_{load}")
+        print(f"{c.r}WARNING : Batch_name {batch_name} not verify{c.d}")
 
 
-                                            elif batch == "analyse":
+    # raise missings
+    if len(missings) > 0:
 
-                                                device = "cpu"
-                                                for score in args.score:
-                                                    codes.append(f"{batch_codes['analyse'][0]} model={model} train={train} test={test} loss={loss} lr={lr} score={score} load={load}")
-                                                    batch_names.append(f"{batch}_{model}_{loss}_{train}_{test}_{lr}_{score}_{load}")
+        print(f"{c.r}Some missings results to make batch ({len(missings)}) :{c.d}")
 
-                                            elif batch == "extract_atmo":
+        for missing in missings:
+            print(f"    * {c.ti}{missing}{c.d}")
 
-                                                device = "cpu"
+        print(f"{c.r}##########{c.d}\n")
 
-                                                # if we want multiple cpu
-                                                if "ncpu" in dir(args):
-                                                    partition = give_partition(ntest, int(args.ncpu))
-                                                    begin_with = np.concatenate((np.array([0]), np.cumsum(partition)[:-1])) # [3, 3, 2, 2] to [0, 3, 6, 8]
-                                                    for p, b in zip(partition, begin_with):
-                                                        codes.append(f"{batch_codes['extract_atmo'][0]} extract_atmo model={model} train={train} test={test} loss={loss} lr={lr} load={load} range={b}_{p}")
-                                                        batch_names.append(f"{batch}_{model}_{loss}_{train}_{test}_{lr}_{load}_{b}_{p}")
-                                                else:
-                                                    codes.append(f"{batch_codes['extract_atmo'][0]} extract_atmo model={model} train={train} test={test} loss={loss} lr={lr} load={load}")
-                                                    batch_names.append(f"{batch}_{model}_{loss}_{train}_{test}_{lr}_{load}")
+        raise Exception(f"Some missings results ({len(missings)})")
 
+    else:
 
-                                            elif batch == "analyseFOPA":
-
-                                                device = "cpu"
-                                                for score in args.score:
-                                                    codes.append(f"{batch_codes['analyseFOPA'][0]} model={model} train={train} test={test} loss={loss} lr={lr} score={score} load={load}")
-                                                    batch_names.append(f"{batch}_{model}_{loss}_{train}_{test}_{lr}_{score}_{load}")
+        pass
 
 
 
-    # Construction of SLURM file:
 
-    if make_jobs:
 
-        if not args.mult:
 
-            extsup = "slurm" if not args.local else "local"
-            generate_batch(batch, codes, device, mem=args.mem, ext=extsup, local=args.local, gpu_device=args.gd, nbj=args.nbj)
+##########
+########## MAIN
+##########
+
+if __name__ in "__main__":
+
+    # Define possible batch, with needed argv : batch -> [<code python>, [<needed argv], <device>]
+    batch_codes = {
+        "simu"                 : ["specSimulator/main_simu.py",   ["nsimu", "tel", "test", "seed"],                                 "cpu"],
+        "training"             : ["models/train_models.py",       ["model", "loss", "train", "lr", "tel", "e", "seed"],             "gpu"],
+        "apply"                : ["applies/apply_model.py",       ["model", "loss", "train", "lr", "tel", "test", "seed"],          "cpu"],
+        "apply_spectractor"    : ["applies/apply_spectractor.py", ["test", "tel", "seed"],                                          "cpu"],
+        "analyse"              : ["analyses/analyse_test.py",     ["model", "loss", "train", "lr", "tel", "test", "seed", "score"], "cpu"],
+        "extract_atmo"         : ["extractAtmos/extractAtmo.py",  ["model", "loss", "train", "lr", "tel", "test", "seed"],          "cpu"],
+        "analyse_atmo"         : ["extractAtmos/analyseAtmo.py",  ["tel", "test", "seed"],                                          "cpu"],
+    
+        "search@analyse_atmo"  : ["search_missing_extraction",    ["test", "tel", "seed"],                                          "cpu"],
+    }
+
+    # batch can accept multiple cpu usage
+    batch_can_ncpu = ["apply_spectractor", "extract_atmo"]
+
+
+    # Define test name possible
+    test_fold = {
+        "x" : "",
+        "ext" : "EXT",
+        "ot" : "OT",
+        "na" : "NA",
+        "gauss" : "GAUSSIAN", "gaussian" : "GAUSSIAN",
+        "gaussna" : "GAUSSIANNA", "gaussianna" : "GAUSSIANNA",
+        "stardice" : "STARDICE",
+    }
+
+
+    # argv to split into list if containt ","
+    arg2split = ["model", "loss", "train", "test", "lr", "load", "nsimu", "score", "tel", "seed", "e"]
+
+
+    # search batch et args from sys.argv
+    batch, args = read_SYSargv(batch_codes, arg2split)
+
+
+    # verify test fold
+    if "test" in args.a2s.keys():
+
+        test = list()
+        test_error = list()
+
+        for t in args.a2s["test"]:
+
+            if t in test_fold.keys():
+                test.append(test_fold[t])
+            else:
+                test_error.append(f"{c.r}{t}{c.d}")
+
+        if len(test_error) > 0:
+            raise Exception(f"{', '.join(test_error)} not exist (key available : {', '.join(list(test_fold.keys()))})")
+        else:
+            args.a2s["test"] = test
+
+
+    # change lr for good format (1e-4 -> 1e-04)
+    if "lr" in args.a2s.keys():
+
+        args.a2s["lr"] = [f"{float(lr):.0e}" for lr in args.a2s["lr"]]
+
+
+    # verify batch validity
+    verify_batch(batch, args)
+
+
+
+
+    ### create all batch --- args.a2s[""], 
+
+    batch_code = batch_codes[batch][0]
+    batch_names = list()
+    codes = list()
+
+    if batch == "simu":
+
+        raise Exception(f"Simu batch TOMAKE")
+
+    # create batch for training
+    elif batch == "training":
+
+        for model, loss, train, lr, tel, e, seed, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["e"], args.a2s["seed"], args.a2s["load"]):
+
+            train_folder = f"train{train}{tel}-{seed}"
+            valid_folder = f"valid{args.validsize}{tel}-{seed}"
+            codes.append(f"{batch_code} model={model} loss={loss} train={train_folder} valid={valid_folder} epoch={e} lr={lr} load={load}")
+            batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{lr}_{e}_{load}")
+
+    # create batch for apply
+    elif batch_name == "apply":
+
+        for model, loss, train, lr, tel, test, seed, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["load"]):
+
+            train_folder = f"train{train}{tel}-{seed}"
+            test_folder = f"test{args.testsize}{tel}-{seed}"
+            codes.append(f"{batch_code} model={model} loss={loss} train={train_folder} test={test_folder} lr={lr} load={load} {device}")
+            batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{test_folder}_{lr}_{load}")
+
+    # create batch for apply_spectractor
+    elif batch_name == "apply_spectractor":
+
+        for tel, test, seed in szip(args.a2s["tel"], args.a2s["test"], args.a2s["seed"]):
+
+            test_folder = f"test{args.testsize}{tel}-{seed}"
+            codes.append(f"{batch_code} {test_folder}")
+            batch_names.append(f"{batch}_{test_folder}")
+
+    # create batch for analyse
+    elif batch_name == "analyse":
+
+        for model, loss, train, lr, tel, test, seed, score, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["score"], args.a2s["load"]):
+
+            train_folder = f"train{train}{tel}-{seed}"
+            test_folder = f"test{args.testsize}{tel}-{seed}"
+            codes.append(f"{batch_code} model={model} train={train_folder} test={test_folder} loss={loss} lr={lr} score={score} load={load}")
+            batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{test_folder}_{lr}_{score}_{load}")
+
+    # create batch for extract atmo
+    elif batch == "extract_atmo":
+
+        for model, loss, train, lr, tel, test, seed, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["load"]):
+
+            train_folder = f"train{train}{tel}-{seed}"
+            test_folder = f"test{args.testsize}{tel}-{seed}"
+            codes.append(f"{batch_code} model={model} train={train_folder} test={test_folder} loss={loss} lr={lr} load={load}")
+            batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{test_folder}_{lr}_{load}")
+
+    # create batch for analyse atmo
+    elif batch in ["analyse_atmo", "search@analyse_atmo"]:
+
+        for tel, test, seed in szip(args.a2s["tel"], args.a2s["test"], args.a2s["seed"]):
+
+            test_folder = f"test{args.testsize}{tel}-{seed}"
+            codes.append(f"{batch_code} test={test_folder}")
+            batch_names.append(f"{batch}_{test_folder}")
+
+    else:
+
+        raise Exception(f"{batch} batch TOMAKE")
+
+
+    # if we want multiple cpu : ncpu=<number of cpu>
+    if "ncpu" in dir(args):
+
+        if batch in batch_can_ncpu:
+            print(f"Make ncpu codes [ncpu={args.ncpu}] ...")
+            batch_names, codes = codes_with_ncpu(args.ncpu, batch_names, codes)
 
         else:
+            print(f"{c.r}WARNING : No multiple cpu (ncpu) for {batch}, only for {', '.join(batch_can_ncpu)}.{c.d}")
 
-            extsup = "slurm" if not args.local else ""
-            ext = "sh" if not args.local else ""
 
-            with open(f"{batch}.{extsup}", "w") as f:
-                for name, code in zip(batch_names, codes):
-                    generate_batch(name, code, device, ext=ext, mem=args.mem, local=args.local, gpu_device=args.gd, nbj=args.nbj)
-                    f.write(f"sbatch {params.path}/{name}.sh\n")
+    # Number final of codes
+    print(f"Number of codes : {c.lm}{len(codes)}{c.d}")
+
+
+
+
+    ### use module function
+    if "@" in batch:
+
+        sub_batch = batch.split("@")[1]
+
+        module_name = batch_codes[sub_batch][0][:-3].replace("/", ".")
+        function_name = batch_codes[batch][0]
+
+        print(f"{c.y}INFO : Import module {module_name} ...{c.d}")
+        module = importlib.import_module(module_name)
+
+        print(f"{c.y}INFO : Import function {function_name} from module {module_name}{c.d}")
+        function = getattr(module, function_name)
+
+        search_batchs = list()
+
+        for batch_name, code in zip(batch_names, codes):
+
+            print(f"{c.y}INFO : CODE sysArgv : `{code}`{c.d}")
+            search_batchs += function(code.split(" "))
+
+
+        # create new batchs from the searching
+        codes = list()
+        batch_names = list()
+
+        for i, sb in enumerate(search_batchs):
+            batch = sb.split(" ")[0]
+            argsi = " ".join(sb.split(" ")[1:])
+            code = f"{batch_codes[batch][0]} {argsi}"
+            batch_name = f"{batch}_{i+1}sur{len(search_batchs)}"
+
+            print(f"New batch [{c.tu}{batch_name}{c.d}] : {c.ti}{c.lm}{code}{c.d}")
+            codes.append(code)
+            batch_names.append(batch_name)
+
+
+        # if we want multiple cpu : ncpu=<number of cpu>
+        if "ncpu" in dir(args):
+
+            if batch in batch_can_ncpu:
+                print(f"Make ncpu codes [ncpu={args.ncpu}] ...")
+                batch_names, codes = codes_with_ncpu(args.ncpu, batch_names, codes)
+                print(f"New number of codes : {c.lm}{len(codes)}{c.d}")
+
+            else:
+                raise Exception(f"No multiple cpu ({c.r}ncpu{c.d}) for {batch}, only for {', '.join(batch_can_ncpu)}.")
+
+
+        # make the choice of create batch file or note
+        choice = input(f"Tap `yes` or `y` to create batch file from search : ")
+
+        if choice not in ["yes", "y"]:
+            print(f"Close making batch...")
+            sys.exit()
+
+
+    ### Construction of SLURM file:
+    print(f"construction of SLURM FILE")
+
+    if not args.mult:
+
+        extsup = "slurm" if not args.local else "local"
+        generate_batch(batch, codes, device=args.device, mem=args.mem, ext=extsup, local=args.local, gpu_device=args.gd, nbj=args.nbj)
+
+    else:
+
+        extsup = "slurm" if not args.local else ""
+        ext = "sh" if not args.local else ""
+
+        with open(f"{batch}.{extsup}", "w") as f:
+            for name, code in zip(batch_names, codes):
+                generate_batch(name, code, device=args.device, ext=ext, mem=args.mem, local=args.local, gpu_device=args.gd, nbj=args.nbj)
+                f.write(f"sbatch {params.path}/{name}.sh\n")
                                     
+
+
+
+
+
+
+
 
 
 

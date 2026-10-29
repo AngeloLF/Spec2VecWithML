@@ -362,7 +362,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
         model = savef.split("_")[1]
 
-        if model not in ["True", "SpectractorFile"]:
+        if model not in ["True", "SpectractorFile"] and os.path.exists(f"./results/analyse/{score}/{savef}/{Args.test}/remember_score_classic.txt"):
 
             # path to save cross figure
             pathSave_cross = f"./results/analyse/extractAtmos/{Args.test}/remember/{savef}"

@@ -172,7 +172,7 @@ def get_argv(argv, prog=None, correction=False, show=False):
 
 
 
-    if prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training", "cross_analyse"]:
+    if prog in ["training", "apply", "analyse", "gradcam", "residus", "extract_atmo", "analyse_training"]:
 
         Args.model_loss = f"{Args.model}_{Args.loss}"
         Args.fulltrain_str = f"{Args.from_prefixe}{Args.train}"
