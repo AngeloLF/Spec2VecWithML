@@ -455,7 +455,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
             with open(resume_file, "r") as f:
 
-                classic, norma = f.read().split("\n")
+                classic, norma, *_ = f.read().split("\n")
 
                 score, std = classic.split("=")[1].split("~")
                 save_all[savef]["score"] = [float(score), float(std)]
