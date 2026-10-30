@@ -20,10 +20,14 @@ This repo containt also a folder **Spectractor**. It's a modified version of ori
 
 
 
-## Using Making jobs at CCIN2P3
+## Using `making_batch.py` to create batch (at CCIN2P3 or local)
 
 Full pipeline, for create and train few models and compare to Spectractor.
-I make an exemple to train 4 models with the architecture SCaM on AuxTel simulations with 2 loss function ("chi2" and "MSE") and 2 learning rate (1e-4 and 1e-5)
+I make an exemple to train 4 models with the architecture SCaM on AuxTel simulations with 2 loss function ("chi2" and "MSE") and 2 learning rate (1e-4 and 1e-5).
+
+Option :
+  * Add argv *local* to create a local batch
+  * Add argv *nomult* to create only one batch
 
 
 ### Simulation of datasets :
@@ -156,6 +160,8 @@ For analyse:
 ```bash
 python jobAndBots/making_batch.py extract_atmo test=x tel=auxtel seed=413
 ```
+
+
 
 
 

@@ -15,6 +15,24 @@ from recup_score import generate_html_table
 
 
 
+models_colors = {
+    "True"            : ["#000000", "#000000"],
+    "SpectractorFile" : ["#000000", "#000000"],
+    "Spectractor" : ["#888888", "#000000"],
+
+    "SCaM"    : ["#ff0000", "#ff6666"],
+    "SCaMv2"  : ["#ff007f", "#ff66b2"],
+    "SotSu"   : ["#0000ff", "#6666ff"],
+    "SotSuv2" : ["#00cccc", "#33ffff"],
+
+    "SCaMD10" : ["#00ff00", "#22ff22"],
+    "SCaMD20" : ["#00bb00", "#22bb22"],
+    "SCaMD40" : ["#007700", "#227722"],
+}
+
+
+
+
 def calcul_RMS(r):
 
     return np.sqrt(np.nanmean(r**2))
@@ -187,6 +205,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     vp = np.load(f"{path}/{Args.test}/vparams.npz")
 
     save_txt = {t:list() for t in targets}
+    save_all = {savef:dict() for savef in saveFolders}
     print("\nSave extract atmo performances :")
 
     scores = {savef:dict() for savef in saveFolders}
@@ -218,7 +237,8 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             STD = calcul_dRMS(res, dres)
             MEAN = np.abs(np.nanmean(res))
 
-            title = f"{savef} : RMS={RMS:.3f} STD={STD:.3f} MEAN={MEAN:.3f}"
+            title = f"{savef} : {RMS}~{STD}"
+            save_all[savef][t] =  [RMS, STD]
             save_txt[t].append(title)
             print(title)
             scores[savef][t] = [RMS, STD]
@@ -247,7 +267,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
     save_txt["total"] = list()
 
-    for savef, vals in scores.items():
+    for i, (savef, vals) in enumerate(scores.items()):
 
         bornes = np.array([hp["vparams"][hp_labels[t]][1] - hp["vparams"][hp_labels[t]][0] for t in targets])
         y  = np.array([vals[t][0] for t in targets]) / bornes * 100
@@ -255,6 +275,10 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
         scores[savef]["total"] = [calcul_RMS(y), calcul_dRMS(y, dy)]
         save_txt["total"].append(f"{savef} : {calcul_RMS(y)}~{calcul_dRMS(y, dy)}")
+        save_all[savef]["total"] = [calcul_RMS(y), calcul_dRMS(y, dy)]
+
+        if saveFolders[i] != savef:
+            raise Exception(f"Order is break") 
 
 
 
@@ -418,6 +442,71 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                     plt.tight_layout()
                     plt.savefig(f"{pathSave}/{Args.test}/cross_analyse/{type_score} {scale}/cross_analyse {savef}.png")
                     plt.close()
+
+
+    # recup score chi2 in resume.txt
+    type_score = "chi2"
+
+    for savef in saveFolders:
+
+        if "True" not in savef and "SpectractorFile" not in savef:
+
+            resume_file = f"./results/analyse/{type_score}/{savef}/{Args.test}/resume.txt"
+
+            with open(resume_file, "r") as f:
+
+                classic, norma = f.read().split("\n")
+
+                score, std = classic.split("=")[1].split("~")
+                save_all[savef]["score"] = [float(score), float(std)]
+
+                score, std = norma.split("=")[1].split("~")
+                save_all[savef]["score_norma"] = [float(score), float(std)]
+
+
+    # make global cross analyse figure
+
+    for t in targets+["total"]:
+
+        fig, axes = plt.subplots(1, 1, figsize=(12, 12))
+
+        for savef, vals in save_all.items():
+
+            if "True" not in savef and "SpectractorFile" not in savef:
+
+                total, total_std = vals[t]
+                score, score_std = vals["score"]
+
+                model = savef.split("_")[1]
+                color = models_colors[model][0]
+                _, model_, loss_, trainseed_, lr_, *_ = pf.split("_")
+                savef_str = f"{model_} {loss_} {lr_}"
+
+                axes.errorbar(score, total, xerr=score_std, yerr=total_std, color=color)
+                axes.scatter(score, total, color=color)
+                axes.annotate(
+                    savef_str,
+                    xy=(score, total),                      # position du point
+                    xytext=(4, 4),                    # décalage en points (pas en unités de données)
+                    textcoords="offset points",
+                    rotation=45,                      # texte penché à 45°
+                    #rotation_mode="anchor",           # la rotation se fait autour du point d'ancrage
+                    ha="left", va="bottom",
+                    fontsize=10,
+                    bbox=dict(
+                        boxstyle="round,pad=0.3",     # coins arrondis
+                        facecolor=color,                  # couleur de fond depuis la liste colors
+                        edgecolor="k",
+                        alpha=0.8,
+                    ),
+                )
+
+        plt.tight_layout()
+        plt.savefig(f"{pathSave}/{Args.test}/cross_analyse/cross_analyse_global @ {t}.png")
+        plt.close()
+
+
+
 
 
 if __name__ == "__main__":
