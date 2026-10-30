@@ -628,9 +628,12 @@ if __name__ == "__main__":
     Folds.pred_folder = f"pred_{Args.fullname}"
     Paths.pred_folder = f"{Paths.score}/{Folds.pred_folder}"
 
+    Paths.remember_resume = f"./results/resume_score"
+
     os.makedirs(Paths.analyse, exist_ok=True)
     os.makedirs(Paths.score, exist_ok=True)
     os.makedirs(Paths.pred_folder, exist_ok=True)
+    os.makedirs(Paths.remember_resume, exist_ok=True)
     
 
     # chargement des params du train
@@ -807,19 +810,36 @@ if __name__ == "__main__":
 
 
 
-    with open(f"{Paths.save}/resume.txt", "w") as f:
 
-        print(f"{c.y}INFO : save resume ...{c.d}")
+    print(f"{c.y}INFO : save resume ...{c.d}")
+    resume_writing = list()
 
-        for mode in ["classic", "norma"]:
 
-            true_res = np.copy(res[mode])[~np.isnan(res[mode])]
+    for mode in ["classic", "norma"]:
 
-            pc = 0.01
-            args = np.argsort(true_res)
-            imin, imax = int(len(args)*pc), int(len(args)*(1-pc))
+        true_res = np.copy(res[mode])[~np.isnan(res[mode])]
 
-            f.write(f"{mode}={np.mean(true_res[args[imin:imax]])}~{np.std(true_res[args[imin:imax]])}\n")
+        pc = 0.01
+        args = np.argsort(true_res)
+        imin, imax = int(len(args)*pc), int(len(args)*(1-pc))
+
+        resume_writing.append(f"{mode}={np.mean(true_res[args[imin:imax]])}~{np.std(true_res[args[imin:imax]])}")
+
+
+    for save_wrinting in [f"{Paths.save}/resume.txt", f"{Paths.remember_resume}/{Args.fullname} @ {Args.test}.txt"]:
+
+        with open(save_wrinting, "w") as f:
+
+            f.write("\n".join(resume_writing))
+
 
     print(f"{c.y}*** END ANALYSE ***{c.d}")
+
+
+
+
+
+
+
+
 

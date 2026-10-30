@@ -122,6 +122,11 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     os.mkdir(f"{pathSave}/{Args.test}/remember")
     os.mkdir(f"{pathSave}/{Args.test}/cross_analyse")
 
+    os.mkdir(f"{pathSave}/{Args.test}/cross_analyse/classic linear")
+    os.mkdir(f"{pathSave}/{Args.test}/cross_analyse/classic log")
+    os.mkdir(f"{pathSave}/{Args.test}/cross_analyse/norma linear")
+    os.mkdir(f"{pathSave}/{Args.test}/cross_analyse/norma log")
+
     for t in targets:
         os.mkdir(f"{pathSave}/{Args.test}/{t}")
 
@@ -377,23 +382,34 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             num_score, data_score = read_score(f"{path_remember_score}/remember_score_classic.txt")
             num_score_norma, data_score_norma = read_score(f"{path_remember_score}/remember_score_norma.txt")
 
-            fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-            fig.suptitle(f"Cross analyse for {savef.replace(' ', '')}", fontweight="bold")
 
-            for atmo, ax in zip(atmos, axes):
 
-                num_atmo, data_atmo = read_atmos(f"{path_remember_atmos}/{atmo}.txt")
+            for type_score in ["classic", "norma"]:
 
-                if (num_score != num_atmo).all():
-                    raise Exception(f"Num extract from atmo & score is not the same ...")
+                num_score, data_score = read_score(f"{path_remember_score}/remember_score_{type_score}.txt")
 
-                ax.plot(data_score, data_atmo, ls="", marker="+", c="r")
-                ax.set_title(f"For {atmo}")
-                ax.set_xlabel(f"Score {score}")
-                ax.set_ylabel(f"Residus for {atmo}")
+                for scale in ["linear", "log"]:
 
-            plt.savefig(f"{pathSave}/{Args.test}/cross_analyse/cross_analyse {savef}.png")
-            plt.close()
+                    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+                    fig.suptitle(f"Cross analyse for {savef.replace(' ', '')}", fontweight="bold")
+
+                    for atmo, ax in zip(atmos, axes):
+
+                        num_atmo, data_atmo = read_atmos(f"{path_remember_atmos}/{atmo}.txt")
+
+                        if (num_score != num_atmo).all():
+                            raise Exception(f"Num extract from atmo & score is not the same ...")
+
+                        ax.plot(data_score, np.abs(data_atmo), ls="", marker="+", c="r")
+                        ax.set_xscale(scale)
+                        ax.set_yscale(scale)
+                        ax.set_title(f"For {atmo}")
+                        ax.set_xlabel(f"Score {score}")
+                        ax.set_ylabel(f"Residus (abs) for {atmo}")
+
+                    plt.tight_layout()
+                    plt.savefig(f"{pathSave}/{Args.test}/cross_analyse/{type_score} {scale}/cross_analyse {savef}.png")
+                    plt.close()
 
 
 if __name__ == "__main__":

@@ -24,14 +24,12 @@ def generate_batch(batch_name, codes, device, mult=False, mail=True, log=True, e
         TOMAKE
     """
 
-
     ### ENTETE
     if not local:
         slurm = ["#!/bin/bash"]
         slurm.append(f"#SBATCH --job-name={batch_name}               # Nom du job")
     else:
         slurm = ["#!/bin/bash"]
-        # slurm = ["Write-Host \"PS1 : sbatch\""]
 
 
     ### Number of task & time max
