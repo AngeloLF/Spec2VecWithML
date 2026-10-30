@@ -479,7 +479,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
                 model = savef.split("_")[1]
                 color = models_colors[model][0]
-                _, model_, loss_, trainseed_, lr_, *_ = pf.split("_")
+                _, model_, loss_, trainseed_, lr_, *_ = savef.split("_")
                 savef_str = f"{model_} {loss_} {lr_}"
 
                 axes.errorbar(score, total, xerr=score_std, yerr=total_std, color=color)
