@@ -186,14 +186,13 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         hp = json.load(fjson)
     vp = np.load(f"{path}/{Args.test}/vparams.npz")
 
-    save_txt = "Save extract atmo performances :\n"
+    save_txt = {t:list() for t in targets}
     print("\nSave extract atmo performances :")
 
     scores = {savef:dict() for savef in saveFolders}
 
     for i, t in enumerate(targets):
 
-        save_txt += f"\n{t}\n"
         print(f"\n{c.m}For {t}{c.d}")
 
         true_vals = getTrueValues(hp, vp, t)
@@ -220,7 +219,7 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             MEAN = np.abs(np.nanmean(res))
 
             title = f"{savef} : RMS={RMS:.3f} STD={STD:.3f} MEAN={MEAN:.3f}"
-            save_txt += f"{title}\n"
+            save_txt[t].append(title)
             print(title)
             scores[savef][t] = [RMS, STD]
 
@@ -245,9 +244,8 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
 
 
-    with open(f"{pathSave}/{Args.test}/save_extraction_score.txt", "w") as f:
-        f.write(save_txt)
 
+    save_txt["total"] = list()
 
     for savef, vals in scores.items():
 
@@ -256,6 +254,16 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         dy = np.array([vals[t][1] for t in targets]) / bornes * 100
 
         scores[savef]["total"] = [calcul_RMS(y), calcul_dRMS(y, dy)]
+        save_txt["total"].append(f"{savef} : {calcul_RMS(y)}~{calcul_dRMS(y, dy)}")
+
+
+
+
+    for k, v in save_txt.items():
+        with open(f"{pathSave}/{Args.test}/save_{k}.txt", "w") as f:
+            f.write("\n".join(v))
+
+
 
 
     # Resume plots
