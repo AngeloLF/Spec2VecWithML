@@ -33,8 +33,7 @@ if __name__ == "__main__":
 
     if Args.loss in ["MSEn"]:
 
-        with open(f"{path_train}/{Args.train}/variable_params.pck", 'rb') as f:
-            vp = pickle.load(f)
+        vp = np.load(f"{path_train}/{Args.train}/vparams.npz")
         ozone, pwv, aerosols = vp["ATM_OZONE"], vp["ATM_PWV"], vp["ATM_AEROSOLS"]
         oms = (np.mean(ozone), np.std(ozone) + 1e-8)
         pms = (np.mean(pwv), np.std(pwv) + 1e-8)

@@ -53,8 +53,7 @@ def give_Loss_Function(loss_name, model_name, train_path=None, device=None):
     elif loss_name == "MSEn":
         if train_path is None : raise Exception("In [give_Loss_Function.py], train_path is needed for loss MSEn (here is None)")
         if device is None : raise Exception("In [give_Loss_Function.py], device is needed for loss MSEn (here is None)")
-        with open(f"{train_path}/variable_params.pck", 'rb') as f:
-            vp = pickle.load(f)
+        vp = np.load(f"{train_path}/vparams.npz")
         ozone, pwv, aerosols = vp["ATM_OZONE"], vp["ATM_PWV"], vp["ATM_AEROSOLS"]
         oms = (np.mean(ozone), np.std(ozone) + 1e-8)
         pms = (np.mean(pwv), np.std(pwv) + 1e-8)
@@ -151,7 +150,6 @@ def give_Loss_Function(loss_name, model_name, train_path=None, device=None):
         print(f"ATM_AEROSOLS : {ams}")
 
         return OzoneSFreeLoss(oms, pms, ams, device, model_name)
-
 
     else: 
         print(f"{c.r}WARNING : loss name {loss_name} unknow{c.d}")
