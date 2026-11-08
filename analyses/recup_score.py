@@ -23,6 +23,8 @@ models_colors = {
     "SCaMD10" : ["#00ff00", "#22ff22"],
     "SCaMD20" : ["#00bb00", "#22bb22"],
     "SCaMD40" : ["#007700", "#227722"],
+
+    "FOPASS" : ["#ff00ff", "#ff99ff"],
 }
 
 lrs_markers = {

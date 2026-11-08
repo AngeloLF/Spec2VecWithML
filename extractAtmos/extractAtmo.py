@@ -8,6 +8,7 @@ from time import time
 from copy import deepcopy
 from types import MethodType
 from scipy.ndimage import zoom
+from types import SimpleNamespace
 
 sys.path.append('./models/')
 from get_argv import get_argv
@@ -46,6 +47,7 @@ def recupAtmosFromParams(w, file_json, wanted_labels=["a1", "vaod", "ozone", "pw
         for wl in wanted_labels:
             if wl.lower() in l.lower():
                 data[wl] = [float(v), float(e)]
+                print(wl, float(v), float(e))
 
     with open(file_json, "w") as f:
         json.dump(data, f)
@@ -96,8 +98,29 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
 
 
     ### EXTRACTION with the spectrum
-    c.fg(f"INFO [extractAtmo.py] : Begin Spectrum Minimisation for {Args.test}/{predFolder}/spectrum_{num_str}.npy ...")
-    if f"images_{num_str}_spectrum.fits" in os.listdir(f"{path}/{Args.test}/spectrum_fits"):
+    
+
+    if os.listdir(f"{path}/{Args.test}/{predFolder}")[0].startswith("opa"):
+
+        opa_file = f"{path}/{Args.test}/{predFolder}/opa_{num_str}.npy"
+        c.fg(f"INFO [extractAtmo.py] : OPA model ... see {opa_file} ...")
+
+        ozone, pwv, vaod = np.load(opa_file)
+
+        w = SimpleNamespace(params=SimpleNamespace())
+
+        w.params.labels = ["ozone", "pwv", "vaod"]
+        w.params.values = [ozone, pwv, vaod]
+        w.params.err = [0., 0., 0.]
+
+        recupAtmosFromParams(w, file_json)
+        print(f"Save atmos params at {file_json}")        
+
+    
+    elif f"images_{num_str}_spectrum.fits" in os.listdir(f"{path}/{Args.test}/spectrum_fits"):
+
+        c.fg(f"INFO [extractAtmo.py] : Begin Spectrum Minimisation for {Args.test}/{predFolder}/spectrum_{num_str}.npy ...")
+
         file_name = f"{path}/{Args.test}/spectrum_fits/images_{num_str}_spectrum.fits"
         spec = Spectrum(file_name, fast_load=True)
 

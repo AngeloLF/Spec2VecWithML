@@ -28,6 +28,8 @@ models_colors = {
     "SCaMD10" : ["#00ff00", "#22ff22"],
     "SCaMD20" : ["#00bb00", "#22bb22"],
     "SCaMD40" : ["#007700", "#227722"],
+
+    "FOPASS" : ["#ff00ff", "#ff99ff"],
 }
 
 
@@ -453,15 +455,22 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
             resume_file = f"./results/analyse/{type_score}/{savef}/{Args.test}/resume.txt"
 
-            with open(resume_file, "r") as f:
+            if os.path.exists(resume_file):
 
-                classic, norma, *_ = f.read().split("\n")
+                with open(resume_file, "r") as f:
 
-                score, std = classic.split("=")[1].split("~")
-                save_all[savef]["score"] = [float(score), float(std)]
+                    classic, norma, *_ = f.read().split("\n")
 
-                score, std = norma.split("=")[1].split("~")
-                save_all[savef]["score_norma"] = [float(score), float(std)]
+                    score, std = classic.split("=")[1].split("~")
+                    save_all[savef]["score"] = [float(score), float(std)]
+
+                    score, std = norma.split("=")[1].split("~")
+                    save_all[savef]["score_norma"] = [float(score), float(std)]
+
+            else:
+
+                save_all[savef]["score"] = [np.nan, np.nan]
+                save_all[savef]["score_norma"] = [np.nan, np.nan]
 
 
     # make global cross analyse figure
