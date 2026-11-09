@@ -374,11 +374,10 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         order_norma = order / (nb_m-1) * 100
 
         y[:, -1] = order_norma + 100
-        x[:, -1] = [f"{o:.2f} %" for o in order_norma]
+        x[:, -1] = [f"{o:.0f} %" for o in order_norma]
 
         y[:, -2] = order_norma + 100
-        x[:, -2] = [f"{1+o}" for o in order]
-
+        x[:, -2] = [f"{1+o:.0f}" for o in order]
 
         for sorting, sorting_str in [(False, ""), (True, "_sorting")]:
 
