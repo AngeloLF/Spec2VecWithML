@@ -58,6 +58,7 @@ class SpectrumSimulation(Spectrum):
         self.atmosphere = atmosphere
         self.fast_sim = fast_sim
         self.with_adr = with_adr
+        self.fixed_dispersion =False
         # save original pixel distances to zero order
         # self.disperser.grating_lambda_to_pixel(self.lambdas, x0=self.x0, order=1)
         # now reset data
@@ -101,7 +102,7 @@ class SpectrumSimulation(Spectrum):
         return self.data, self.err
 
     def simulate(self, A1=1.0, A2=0., aerosols=0.05, angstrom_exponent=None, ozone=300, pwv=5, reso=0.,
-                 D=parameters.DISTANCE2CCD, shift_x=0., fixed_params=None):
+                 D=parameters.DISTANCE2CCD, shift_x=0.):
         """Simulate the cross spectrum of an object and its uncertainties
         after its transmission throught the instrument and the atmosphere.
 
@@ -126,8 +127,6 @@ class SpectrumSimulation(Spectrum):
             Distance between the CCD and the disperser in mm (default: parameters.DISTANCE2CCD)
         shift_x: float
             Shift in pixels of the order 0 position estimate (default: 0).
-        fixed_params: None or list of bool
-            If know, list of fixed params
 
         Returns
         -------
@@ -161,7 +160,7 @@ class SpectrumSimulation(Spectrum):
         # find lambdas including ADR effect
         # must add ADR to get perfect result on atmospheric fit in full chain test with SpectrumSimulation()
 
-        if self.lambdas is not None and fixed_params is not None and fixed_params[7] and fixed_params[8]:
+        if self.lambdas is not None and self.fixed_dispersion:
             lambdas = self.lambdas
             lambdas_order2 = self.lambdas
         else:

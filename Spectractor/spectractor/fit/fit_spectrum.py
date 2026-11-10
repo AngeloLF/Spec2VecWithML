@@ -258,7 +258,9 @@ class SpectrumFitWorkspace(FitWorkspace):
         """
         if not self.fit_angstrom_exponent:
             angstrom_exponent = None
-        lambdas, model, model_err = self.simulation.simulate(A1, A2, aerosols, angstrom_exponent, ozone, pwv, reso, D, shift_x, self.params.fixed)
+        if self.params.fixed[7] and self.params.fixed[8]: # DCCD and shift
+            self.simulation.fixed_dispersion = True
+        lambdas, model, model_err = self.simulation.simulate(A1, A2, aerosols, angstrom_exponent, ozone, pwv, reso, D, shift_x)
         if B != 0:
             model += B / (lambdas * np.gradient(lambdas))
         self.model = model
