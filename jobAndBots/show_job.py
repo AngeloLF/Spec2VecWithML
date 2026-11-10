@@ -287,6 +287,8 @@ def inspect_extract(params, debug):
 	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
 	nb_len = len(str(nb_tot))
 
+
+
 	if pred_folder in os.listdir(f"./results/output_simu/{test}/atmos_params_fit"):
 
 		for i in range(a, z):
@@ -309,6 +311,7 @@ def inspect_extract(params, debug):
 
 	else:
 
+		printdebug(f"{pred_folder} not find in ./results/output_simu/{test}/atmos_params_fit...", debug)
 		rl = f"Extract {model_str} > {test} RANGE {a} to {z} : {c.r}{c.tu}{c.ti}Not exist ...{c.d}"
 		ra = -1
 
