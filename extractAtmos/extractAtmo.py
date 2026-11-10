@@ -165,7 +165,7 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             spec.convert_from_ADUrate_to_flam()
 
             printdebug(f"Go SpectrumFitWorkspace...", debug)
-            w = SpectrumFitWorkspace(spec, atmgrid_file_name="", verbose=debug, plot=debug, live_fit=False, fit_angstrom_exponent=True)
+            w = SpectrumFitWorkspace(spec, atmgrid_file_name="", verbose=debug, plot=debug, live_fit=False, fit_angstrom_exponent=True, fixed_a1=False)
             if mode == "simu_size":
                 w.simulation.lambdas = np.arange(300, 1100).astype(float)
                 w.params.fixed[7] = True
@@ -179,7 +179,7 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             print(f"Change d2ccd and set PIXSHIFT at 0")
 
             printdebug(f"Go SpectrumFitWorkspace...", debug)
-            w = SpectrumFitWorkspace(spec, atmgrid_file_name="", verbose=debug, plot=debug, live_fit=False, fit_angstrom_exponent=True)
+            w = SpectrumFitWorkspace(spec, atmgrid_file_name="", verbose=debug, plot=debug, live_fit=False, fit_angstrom_exponent=True, fixed_a1=False)
             printdebug(f"End of SpectrumFitWorkspace", debug)
 
 
@@ -191,11 +191,14 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             print(f"Info [extractAtmos.py] : DATE-OBS not given")
 
         method = "least_squares" #if "lsq" in sys.argv else "newton"
+        opa_file = f"{path}/{Args.test}/opa/opa_{num_str}.npy"
+        ozone, pwv, vaod = np.load(opa_file)
 
         printdebug(f"Go run_spectrum_minimisation... [with method {method}]", True)
         try:
-            run_spectrum_minimisation(w, method=method) #, with_line_search=False)
+            run_spectrum_minimisation(w, method=method, with_line_search=False)
             recupAtmosFromParams(w, file_json)
+            print(f"TRUE OPA :", ozone, pwv, vaod)
             print(f"Save atmos params at {file_json}")
         except Exception as e:
             print(f"{c.r}WARNING : run_spectrum_minimisation exception for {Args.test}/{predFolder}/spectrum_{num_str}.npy ...{c.d}")

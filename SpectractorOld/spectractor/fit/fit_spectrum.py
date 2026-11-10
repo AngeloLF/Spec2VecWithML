@@ -76,7 +76,7 @@ class SpectrumFitWorkspace(FitWorkspace):
 
         p = np.array([1, 0, 0.05, 1.2, 400, 5, 1, self.spectrum.header['D2CCD'], self.spectrum.header['PIXSHIFT'], 0])
         fixed = [False] * p.size
-        fixed[0] = False  # A1  
+        fixed[0] = True  # A1  
         fixed[1] = "A2_T" not in self.spectrum.header  # fit A2 only on sims to evaluate extraction biases
         fixed[5] = False
         fixed[7] = False # DCCD
@@ -260,7 +260,9 @@ class SpectrumFitWorkspace(FitWorkspace):
         """
         if not self.fit_angstrom_exponent:
             angstrom_exponent = None
-        lambdas, model, model_err = self.simulation.simulate(A1, A2, aerosols, angstrom_exponent, ozone, pwv, reso, D, shift_x, self.params.fixed)
+        if self.params.fixed[7] and self.params.fixed[8]:
+            self.simulation.fixed_dispersion = True
+        lambdas, model, model_err = self.simulation.simulate(A1, A2, aerosols, angstrom_exponent, ozone, pwv, reso, D, shift_x)
         if B != 0:
             model += B / (lambdas * np.gradient(lambdas))
         self.model = model

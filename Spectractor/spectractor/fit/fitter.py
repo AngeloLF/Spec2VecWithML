@@ -1728,8 +1728,10 @@ def run_minimisation(fit_workspace, method="newton", xtol=1e-4, ftol=1e-4, niter
         Jfree = res.jac
         fit_workspace.params.cov = np.linalg.inv(Jfree.T @ Jfree)
         if verbose:
-            my_logger.debug(f"\n\t{p}")
+            my_logger.debug(f"\n\t{res}")
             my_logger.debug(f"\n\tLeast_squares: total computation time: {time.time() - start}s")
+            print(f"Results :", res)
+            fit_workspace.plot_fit()
 
     elif method == 'curve_fit':
 
