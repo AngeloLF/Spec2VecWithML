@@ -292,9 +292,6 @@ def inspect_extract(params, debug):
 	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
 	nb_len = len(str(nb_tot))
 
-	if 
-
-
 
 	if pred_folder in os.listdir(f"./results/output_simu/{test}/atmos_params_fit"):
 
