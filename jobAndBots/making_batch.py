@@ -342,9 +342,9 @@ def verify_apply(args):
 
         if not os.path.exists(test_folder):
             missings.append(f"Test not exist : {test_folder}")
-        elif pred_folder not in os.listdir(test_folder) and model not in ["true", "spectractorfile"]:
+        elif model not in ["true", "spectractorfile"] and pred_folder not in os.listdir(test_folder):
             missings.append(f"Pred not exist : {test_folder}/{pred_folder}")
-        elif len(os.listdir(f"{test_folder}/image")) > len(os.listdir(f"{test_folder}/{pred_folder}")):
+        elif model not in ["true", "spectractorfile"] and len(os.listdir(f"{test_folder}/image")) > len(os.listdir(f"{test_folder}/{pred_folder}")):
             nbMiss = len(os.listdir(f"{test_folder}/image")) - len(os.listdir(f"{test_folder}/{pred_folder}"))
             missings.append(f"Pred miss {nbMiss} : {test_folder}/{pred_folder}")
 
