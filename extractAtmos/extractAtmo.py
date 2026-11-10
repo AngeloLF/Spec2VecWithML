@@ -190,7 +190,7 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             w.spectrum.date_obs = "2017-05-31T02:53:52.356"
             print(f"Info [extractAtmos.py] : DATE-OBS not given")
 
-        method = "least_squares" if "lsq" in sys.argv else "newton"
+        method = "least_squares" #if "lsq" in sys.argv else "newton"
 
         printdebug(f"Go run_spectrum_minimisation... [with method {method}]", True)
         try:
