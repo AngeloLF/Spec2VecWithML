@@ -261,8 +261,13 @@ def inspect_extract(params, debug):
 
 	if model == "true":
 		model_str = f"True"
+		train = "x"
 	elif model == "spectractorfile":
 		model_str = f"SpectractorFile"
+		train = "x"
+	elif model == "Spectractor":
+		model_str = model
+		train = "x"
 	else:
 		model_str = model
 	
@@ -286,6 +291,8 @@ def inspect_extract(params, debug):
 
 	nb_tot = len(os.listdir(f"./results/output_simu/{test}/spectrum"))
 	nb_len = len(str(nb_tot))
+
+	if 
 
 
 
