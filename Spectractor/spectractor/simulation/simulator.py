@@ -101,7 +101,7 @@ class SpectrumSimulation(Spectrum):
         return self.data, self.err
 
     def simulate(self, A1=1.0, A2=0., aerosols=0.05, angstrom_exponent=None, ozone=300, pwv=5, reso=0.,
-                 D=parameters.DISTANCE2CCD, shift_x=0.):
+                 D=parameters.DISTANCE2CCD, shift_x=0., fixed_params=None):
         """Simulate the cross spectrum of an object and its uncertainties
         after its transmission throught the instrument and the atmosphere.
 
@@ -126,6 +126,8 @@ class SpectrumSimulation(Spectrum):
             Distance between the CCD and the disperser in mm (default: parameters.DISTANCE2CCD)
         shift_x: float
             Shift in pixels of the order 0 position estimate (default: 0).
+        fixed_params: None or list of bool
+            If know, list of fixed params
 
         Returns
         -------
@@ -159,10 +161,11 @@ class SpectrumSimulation(Spectrum):
         # find lambdas including ADR effect
         # must add ADR to get perfect result on atmospheric fit in full chain test with SpectrumSimulation()
 
-        if "alf_sim_lambdas" in dir(self):
-            lambdas = self.lambdas if self.lambdas is not None else self.alf_sim_lambdas
-            lambdas_order2 = self.lambdas if self.lambdas is not None else self.alf_sim_lambdas
+        if self.lambdas is not None and fixed_params is not None and fixed_params[7] and fixed_params[8]:
+            lambdas = self.lambdas
+            lambdas_order2 = self.lambdas
         else:
+            print(f"Lambdas CHAAAAAAAAAAAAnge, fixed_params :", fixed_params)
             lambdas = self.compute_lambdas_in_spectrogram(D, shift_x=shift_x, shift_y=0, angle=self.rotation_angle, order=1, with_adr=self.with_adr, niter=5)
             lambdas_order2 = self.compute_lambdas_in_spectrogram(D, shift_x=shift_x, shift_y=0, angle=self.rotation_angle, order=2, with_adr=self.with_adr, niter=5)
 

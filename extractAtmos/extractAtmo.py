@@ -167,7 +167,9 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             printdebug(f"Go SpectrumFitWorkspace...", debug)
             w = SpectrumFitWorkspace(spec, atmgrid_file_name="", verbose=debug, plot=debug, live_fit=False, fit_angstrom_exponent=True)
             if mode == "simu_size":
-                w.simulation.alf_sim_lambdas = np.arange(300, 1100).astype(float)
+                w.simulation.lambdas = np.arange(300, 1100).astype(float)
+                w.params.fixed[7] = True
+                w.params.fixed[8] = True
             printdebug(f"End of SpectrumFitWorkspace", debug)
 
         else:
@@ -188,15 +190,17 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             w.spectrum.date_obs = "2017-05-31T02:53:52.356"
             print(f"Info [extractAtmos.py] : DATE-OBS not given")
 
-        printdebug(f"Go run_spectrum_minimisation...", debug)
+        method = "least_squares" if "lsq" in sys.argv else "newton"
+
+        printdebug(f"Go run_spectrum_minimisation... [with method {method}]", True)
         try:
-            run_spectrum_minimisation(w, method="newton", with_line_search=False)
+            run_spectrum_minimisation(w, method=method) #, with_line_search=False)
             recupAtmosFromParams(w, file_json)
             print(f"Save atmos params at {file_json}")
         except Exception as e:
             print(f"{c.r}WARNING : run_spectrum_minimisation exception for {Args.test}/{predFolder}/spectrum_{num_str}.npy ...{c.d}")
             print(f"{c.r}{e}{c.d}")
-        printdebug(f"End of run_spectrum_minimisation", debug)
+        printdebug(f"End of run_spectrum_minimisation", True)
 
 
     else:
