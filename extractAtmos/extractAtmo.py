@@ -190,7 +190,7 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
             w.spectrum.date_obs = "2017-05-31T02:53:52.356"
             print(f"Info [extractAtmos.py] : DATE-OBS not given")
 
-        method = "newton" #if "lsq" in sys.argv else "newton"
+        method = "least_squares" #if "lsq" in sys.argv else "newton"
         opa_file = f"{path}/{Args.test}/opa/opa_{num_str}.npy"
         ozone, pwv, vaod = np.load(opa_file)
 
