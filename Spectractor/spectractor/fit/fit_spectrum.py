@@ -18,7 +18,7 @@ try:
     from gaiaspec import getGaia
 except ModuleNotFoundError:
     getGaia = None
-    
+
 class SpectrumFitWorkspace(FitWorkspace):
 
     def __init__(self, spectrum, atmgrid_file_name="", fit_angstrom_exponent=False,
@@ -436,9 +436,9 @@ def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20, ver
 
         fit_workspace.params.plot_correlation_matrix()
         fit_workspace.plot_fit()
-        extra = {"chi2": fit_workspace.costs[-1] / fit_workspace.data.size,
-                 "date-obs": fit_workspace.spectrum.date_obs,
-                 "outliers": len(fit_workspace.outliers)}
+        extra = {"chi2": fit_workspace.costs[-1] / (fit_workspace.data.size - np.sum(fit_workspace.params.fixed) - len(fit_workspace.mask) - len(fit_workspace.outliers)),
+                    "date-obs": fit_workspace.spectrum.date_obs,
+                    "outliers": len(fit_workspace.outliers)}
         fit_workspace.params.extra = extra
         if fit_workspace.filename != "":
             write_fitparameter_json(fit_workspace.params.json_filename, fit_workspace.params, extra=extra)

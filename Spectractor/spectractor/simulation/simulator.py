@@ -164,7 +164,6 @@ class SpectrumSimulation(Spectrum):
             lambdas = self.lambdas
             lambdas_order2 = self.lambdas
         else:
-            print(f"Lambdas CHAAAAAAAAAAAAnge, fixed_params :", fixed_params)
             lambdas = self.compute_lambdas_in_spectrogram(D, shift_x=shift_x, shift_y=0, angle=self.rotation_angle, order=1, with_adr=self.with_adr, niter=5)
             lambdas_order2 = self.compute_lambdas_in_spectrogram(D, shift_x=shift_x, shift_y=0, angle=self.rotation_angle, order=2, with_adr=self.with_adr, niter=5)
 
