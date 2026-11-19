@@ -576,7 +576,7 @@ def make_score(score_type, models, tests, seed4spectractor):
 
                             plt.figure(figsize=(16, 12))
 
-                            for xi, yi, mi, ci in zip(l[mask_loss], y[i, :, t][mask_loss], markers, colors):
+                            for xi, yi, mi, ci in zip(l[mask_loss], v, markers, colors):
                                 plt.scatter(xi, yi, ls="", marker=mi, c=ci)
 
                             # legend for models
@@ -588,8 +588,11 @@ def make_score(score_type, models, tests, seed4spectractor):
                                 plt.scatter(None, None, color="k", marker=lrs_markers[lru], label=f"LR={lru}")
 
                             plt.xlabel(f"Best loss")
-                            plt.ylabel(f"Score {score} [{typeScore}]")
-                            plt.yscale("log")
+                            if np.sum(y[i, :, t][mask_loss] > 0):
+                                plt.ylabel(f"Score {score} [{typeScore}]")
+                                plt.yscale("log")
+                            else:
+                                plt.ylabel(f"Score {score} [{typeScore}] (no data > 0)")
                             plt.title(f"Loss {li} for score {score} [{typeScore}] in {test_without_seeds}")
                             plt.tight_layout()
                             plt.legend()

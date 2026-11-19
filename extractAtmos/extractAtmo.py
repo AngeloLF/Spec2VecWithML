@@ -77,8 +77,12 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
         saveFolder = f"pred_True_x_x_0e+00"
 
     elif Args.model == "spectractorfile":
-        predFolder = "Spectractor"
+        predFolder = "pred_Spectractor_x_x_0e+00"
         saveFolder = f"pred_SpectractorFile_x_x_0e+00"
+
+    elif Args.model == "Spectractor":
+        predFolder = "pred_Spectractor_x_x_0e+00"
+        saveFolder = f"pred_Spectractor_x_x_0e+00"
 
     else:
         predFolder = f"pred_{Args.fullname}"

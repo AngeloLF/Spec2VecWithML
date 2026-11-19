@@ -137,14 +137,16 @@ def read_SYSargv(batch_codes, arg2split):
 
     # if batch not in batch_codes
     if batch not in batch_codes.keys(): 
-        if batch in ["help", "h", "-h", "--h"]: 
-            print(f"Possible batch :")
-            for bck, bcv in batch_codes.items():
-                color_str = c.g if not bck.startswith("search@") else c.m
-                print(f"    * {color_str}{bck}{c.d} [{', '.join(bcv[1])}]")
-            sys.exit()
-        else:
-            raise Exception(f"BATCH {batch} unknow [help for a list of possible batch]")
+
+        if batch not in ["help", "h", "-h", "--h"]:
+            print(f"BATCH `{c.tu}{batch}{c.ru}` unknow, try :")
+
+        print(f"Possible batch :")
+        for bck, bcv in batch_codes.items():
+            color_str = c.g if not bck.startswith("search@") else c.m
+            print(f"    * {color_str}{bck}{c.d} [{', '.join(bcv[1])}]")
+
+        sys.exit()
 
 
     # view argv
@@ -342,9 +344,9 @@ def verify_apply(args):
 
         if not os.path.exists(test_folder):
             missings.append(f"Test not exist : {test_folder}")
-        elif model not in ["true", "spectractorfile"] and pred_folder not in os.listdir(test_folder):
+        elif model not in ["Spectractor", "true", "spectractorfile"] and pred_folder not in os.listdir(test_folder):
             missings.append(f"Pred not exist : {test_folder}/{pred_folder}")
-        elif model not in ["true", "spectractorfile"] and len(os.listdir(f"{test_folder}/image")) > len(os.listdir(f"{test_folder}/{pred_folder}")):
+        elif model not in ["Spectractor", "true", "spectractorfile"] and len(os.listdir(f"{test_folder}/image")) > len(os.listdir(f"{test_folder}/{pred_folder}")):
             nbMiss = len(os.listdir(f"{test_folder}/image")) - len(os.listdir(f"{test_folder}/{pred_folder}"))
             missings.append(f"Pred miss {nbMiss} : {test_folder}/{pred_folder}")
 
@@ -521,13 +523,19 @@ if __name__ in "__main__":
 
     # Define test name possible
     test_fold = {
-        "x" : "",
-        "ext" : "EXT",
-        "ot" : "OT",
-        "na" : "NA",
-        "gauss" : "GAUSSIAN", "gaussian" : "GAUSSIAN",
-        "gaussna" : "GAUSSIANNA", "gaussianna" : "GAUSSIANNA",
-        "stardice" : "STARDICE",
+        "x"        : ["",           "set0", "moffat2d",      ""],
+        "ext"      : ["EXT",        "set0", "moffat2d",      "test"],
+        "ot"       : ["OT",         "set1", "moffat2d",      ""],
+        "na"       : ["NA",         "set0", "moffat2d_na",   ""],
+        "gauss"    : ["GAUSSIAN",   "set0", "gaussian2d",    ""], "gaussian" : ["GAUSSIAN",   "set0", "gaussian2d",    ""],
+        "gaussna"  : ["GAUSSIANNA", "set0", "gaussian2d_na", ""], "gaussianna" : ["GAUSSIANNA", "set0", "gaussian2d_na", ""],
+        "stardice" : ["STARDICE",   "set0", "stardice",      ""],
+    }
+
+    type_fold = {
+        "train"    : ["train",      "set0", "moffat2d",      ""],
+        "valid"    : ["valid",      "set0", "moffat2d",      ""],
+        **test_fold,
     }
 
 
@@ -539,23 +547,40 @@ if __name__ in "__main__":
     batch, args = read_SYSargv(batch_codes, arg2split)
 
 
-    # verify test fold
+    # verify type / test fold
+    if "type" in args.a2s.keys() and batch == "simu":
+
+        args.a2s["test"] = args.a2s["type"]
+
     if "test" in args.a2s.keys():
 
+        using_fold = type_fold if batch == "simu" else test_fold
+
         test = list()
+        sets = list()
+        psfs = list()
+        adds = list()
         test_error = list()
 
         for t in args.a2s["test"]:
 
-            if t in test_fold.keys():
-                test.append(test_fold[t])
+            if t in using_fold.keys():
+
+                test.append(test_fold[t][0])
+                sets.append(test_fold[t][1])
+                psfs.append(test_fold[t][2])
+                adds.append(test_fold[t][3])
+
             else:
                 test_error.append(f"{c.r}{t}{c.d}")
 
         if len(test_error) > 0:
-            raise Exception(f"{', '.join(test_error)} not exist (key available : {', '.join(list(test_fold.keys()))})")
+            raise Exception(f"{', '.join(test_error)} not exist (key available : {', '.join(list(using_fold.keys()))})")
         else:
             args.a2s["test"] = test
+            args.a2s["sets"] = sets
+            args.a2s["psfs"] = psfs
+            args.a2s["adds"] = adds
 
 
     # change lr for good format (1e-4 -> 1e-04)
@@ -578,7 +603,30 @@ if __name__ in "__main__":
 
     if batch == "simu":
 
-        raise Exception(f"Simu batch TOMAKE")
+        for seed, tel in szip(args.a2s["seed"], args.a2s["tel"]):
+
+            for ni, testi, seti, psfi, addi in zip(args.a2s["nsimu"], args.a2s["test"], args.a2s["sets"], args.a2s["psfs"], args.a2s["adds"]):
+
+                if int(ni) < 1000:
+                    str_n = ni
+                else:
+                    str_n = f"{int(int(ni)/1000)}k"
+
+
+                if testi in ["train", "valid"]:
+
+                    prefixe = testi
+                    test_str = ""
+
+                else:
+
+                    prefixe = "test"
+                    test_str = testi
+
+                filename = f"{prefixe}{str_n}{test_str}{tel}"
+
+                codes.append(f"{batch_codes['simu'][0]} nsimu={ni} f={filename}-{seed} set={seti} tel={tel} seed={seed} psf={psfi} {addi}")
+                batch_names.append(f"{batch}_{filename}-{seed}")
 
     # create batch for training
     elif batch == "training":

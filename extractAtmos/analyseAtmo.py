@@ -33,7 +33,9 @@ models_colors = {
 }
 
 
+def bf_print(x, r=3):
 
+    print(" ".join([f"{xi:{4+r}.{r}f}" for xi in x]))
 
 def calcul_RMS(r):
 
@@ -206,11 +208,9 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
         hp = json.load(fjson)
     vp = np.load(f"{path}/{Args.test}/vparams.npz")
 
-    save_txt = {t:list() for t in targets}
     save_all = {savef:dict() for savef in saveFolders}
+    save_all_PC = {savef:dict() for savef in saveFolders}
     print("\nSave extract atmo performances :")
-
-    scores = {savef:dict() for savef in saveFolders}
 
     for i, t in enumerate(targets):
 
@@ -228,23 +228,31 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
         for i, savef in enumerate(saveFolders):
 
-            plt.figure(figsize=(16, 9))
-
             res = full_data[savef][t][0][true_sort]-y
             dres = full_data[savef][t][1][true_sort]
+            res_PC = res / y * 100
+            dres_PC = dres / y * 100
             nums_str_sort = nums_str[true_sort]
+
+            bf_print(y)
+            bf_print(res)
+            bf_print(res_PC)
             
             RMS = calcul_RMS(res)
+            RMS_PC = calcul_RMS(res_PC)
+
             #STD = np.nanstd(np.abs(res))
             STD = calcul_dRMS(res, dres)
+            STD_PC = calcul_dRMS(res_PC, dres_PC)
             MEAN = np.abs(np.nanmean(res))
 
-            title = f"{savef} : {RMS}~{STD}"
             save_all[savef][t] =  [RMS, STD]
-            save_txt[t].append(title)
-            print(title)
-            scores[savef][t] = [RMS, STD]
+            save_all_PC[savef][t] =  [RMS_PC, STD_PC]
 
+            # Residus "nature"
+            title = f"{savef} : {RMS}~{STD}"
+            print(title)
+            plt.figure(figsize=(16, 9))
             plt.errorbar(x, res, yerr=dres, color="b", ls="", marker=".")
             plt.plot()
             plt.xlabel(t)
@@ -252,6 +260,18 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             plt.axhline(0, color="k", ls=":", label="True value")
             plt.title(title)
             plt.savefig(f"{pathSave}/{Args.test}/{t}/{t}_{savef}.png")
+            plt.close()
+
+            # Residus en PC (i - predi) / i
+            title = f"{savef} : {RMS_PC}~{STD_PC}"
+            plt.figure(figsize=(16, 9))
+            plt.errorbar(x, res_PC, yerr=dres_PC, color="b", ls="", marker=".")
+            plt.plot()
+            plt.xlabel(t)
+            plt.ylabel("Residus (%)")
+            plt.axhline(0, color="k", ls=":", label="True value")
+            plt.title(title)
+            plt.savefig(f"{pathSave}/{Args.test}/{t}/{t}_{savef}_PC.png")
             plt.close()
 
             # remember each res
@@ -264,30 +284,37 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
 
                 f.write('\n'.join(fstr))
 
+            # remember each res_PC
+            with open(f"{pathSave}/{Args.test}/remember/{savef}/{t}_PC.txt", "w") as f:
 
+                fstr = list()
 
+                for r, n in zip(res_PC, nums_str_sort):
+                    fstr.append(f"{n} : {r}")
 
-    save_txt["total"] = list()
-
-    for i, (savef, vals) in enumerate(scores.items()):
-
-        bornes = np.array([hp["vparams"][hp_labels[t]][1] - hp["vparams"][hp_labels[t]][0] for t in targets])
-        y  = np.array([vals[t][0] for t in targets]) / bornes * 100
-        dy = np.array([vals[t][1] for t in targets]) / bornes * 100
-
-        scores[savef]["total"] = [calcul_RMS(y), calcul_dRMS(y, dy)]
-        save_txt["total"].append(f"{savef} : {calcul_RMS(y)}~{calcul_dRMS(y, dy)}")
-        save_all[savef]["total"] = [calcul_RMS(y), calcul_dRMS(y, dy)]
-
-        if saveFolders[i] != savef:
-            raise Exception(f"Order is break") 
+                f.write('\n'.join(fstr))
 
 
 
 
-    for k, v in save_txt.items():
-        with open(f"{pathSave}/{Args.test}/save_{k}.txt", "w") as f:
-            f.write("\n".join(v))
+    for savef in saveFolders:
+
+        for save_ in [save_all, save_all_PC]:
+
+            values = np.array([save_[savef][t][0] for t in targets])
+            dvalues = np.array([save_[savef][t][1] for t in targets])
+            save_[savef]["total"] = [calcul_RMS(values), calcul_dRMS(values, dvalues)]
+
+
+
+    for t in (targets + ["total"]):
+
+        for save_, suffixe in [(save_all, ""), (save_all_PC, "_PC")]:
+            
+            labels = [f"{savef} : {save_[savef][t][0]}~{save_[savef][t][1]}" for savef in save_.keys()]
+
+            with open(f"{pathSave}/{Args.test}/save_{t}{suffixe}.txt", "w") as f:
+                f.write("\n".join(labels))
 
 
 
@@ -295,17 +322,15 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
     # Resume plots
     print(f"\n{c.m}Make resume plots{c.d}")
 
-    for inPC in [False, True]:
+    for inPC, save_ in [(False, save_all), (True, save_all_PC)]:
 
         for i, t in enumerate(["pwv", "vaod", "ozone", "total"]):
-
-            diff_borne = 1 if t not in targets or not inPC else (hp["vparams"][hp_labels[t]][1] - hp["vparams"][hp_labels[t]][0]) / 100
 
             plt.figure(figsize=(16, 9))
 
             x = np.arange(len(saveFolders))
-            y = np.array([scores[savef][t][0] / diff_borne for savef in saveFolders])
-            yerr = [scores[savef][t][1] / diff_borne for savef in saveFolders]
+            y = np.array([save_[savef][t][0] for savef in saveFolders])
+            yerr = np.array([save_[savef][t][1] for savef in saveFolders])
 
             argsort_y = np.argsort(np.abs(y))
 
@@ -319,8 +344,9 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
                 plt.ylabel(f"Residus {t}")
 
             plt.tight_layout()
+
             if inPC:
-                plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_INPC.png")
+                plt.savefig(f"{pathSave}/{Args.test}/resume_{t}_PC.png")
             else:
                 plt.savefig(f"{pathSave}/{Args.test}/resume_{t}.png")
 
@@ -346,19 +372,18 @@ def analyseExtraction(Args, path="./results/output_simu", atmoParamFolder="atmos
             for t, target in enumerate(targets):
 
                 print(f"        test {target}")
-                diff_borne = 1 if target not in targets or not inPC else (hp["vparams"][hp_labels[target]][1] - hp["vparams"][hp_labels[target]][0]) / 100
 
-                mean, std = scores[model][target]
-                y[m, t] = mean / diff_borne
-                e[m, t] = std / diff_borne
-                x[m, t] = f" {mean/diff_borne:.3f} &plusmn {std/diff_borne:.3f} "
+                mean, std = save_[model][target]
+                y[m, t] = mean
+                e[m, t] = std
+                x[m, t] = f" {mean:.3f} &plusmn {std:.3f} "
 
-                tot_mean.append(mean/diff_borne)
-                tot_std.append(std/diff_borne)
+                tot_mean.append(mean)
+                tot_std.append(std)
 
-            y[m, -3] = scores[model]['total'][0]
-            e[m, -3] = scores[model]['total'][1]
-            x[m, -3] = f"{scores[model]['total'][0]:.2f} &plusmn {scores[model]['total'][1]:.2f}"
+            y[m, -3] = save_[model]['total'][0]
+            e[m, -3] = save_[model]['total'][1]
+            x[m, -3] = f"{save_[model]['total'][0]:.2f} &plusmn {save_[model]['total'][1]:.2f}"
 
 
 

@@ -92,9 +92,9 @@ For apply Spectractor, *test* and *tel* needed. *ncpu* can also be given, to cut
 
 ```bash
 python jobAndBots/making_batch.py apply model=SCaM loss=chi2,MSE train=16k lr=1e-4,1e-5 tel=auxtel test=x,ext,ot seed=413
-python jobAndBots/making_batch.py apply_spectractor test=x tel=auxtel ncpu=100
-python jobAndBots/making_batch.py apply_spectractor test=ext tel=auxtel ncpu=100
-python jobAndBots/making_batch.py apply_spectractor test=ot tel=auxtel ncpu=100
+python jobAndBots/making_batch.py apply_spectractor test=x tel=auxtel ncpu=100 seed=413
+python jobAndBots/making_batch.py apply_spectractor test=ext tel=auxtel ncpu=100 seed=413
+python jobAndBots/making_batch.py apply_spectractor test=ot tel=auxtel ncpu=100 seed=413
 ```
 
 

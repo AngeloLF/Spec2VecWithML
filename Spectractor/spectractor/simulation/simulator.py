@@ -58,7 +58,7 @@ class SpectrumSimulation(Spectrum):
         self.atmosphere = atmosphere
         self.fast_sim = fast_sim
         self.with_adr = with_adr
-        self.fixed_dispersion =False
+        self.fixed_dispersion = False
         # save original pixel distances to zero order
         # self.disperser.grating_lambda_to_pixel(self.lambdas, x0=self.x0, order=1)
         # now reset data
@@ -164,7 +164,6 @@ class SpectrumSimulation(Spectrum):
             lambdas = self.lambdas
             lambdas_order2 = self.lambdas
         else:
-            print(f"Lambdas CHAAAAAAAAAAAAnge, fixed_params :", fixed_params)
             lambdas = self.compute_lambdas_in_spectrogram(D, shift_x=shift_x, shift_y=0, angle=self.rotation_angle, order=1, with_adr=self.with_adr, niter=5)
             lambdas_order2 = self.compute_lambdas_in_spectrogram(D, shift_x=shift_x, shift_y=0, angle=self.rotation_angle, order=2, with_adr=self.with_adr, niter=5)
 
