@@ -1894,7 +1894,7 @@ def run_minimisation(fit_workspace, method="newton", xtol=1e-4, ftol=1e-4, niter
         x_scale[x_scale == 0] = 0.1
         
         res = optimize.least_squares(weighted_residuals_free, guess[ipar], verbose=verbose, ftol=1e-8, #x_scale=x_scale,
-                                     jac=weighted_residuals_jac_free,
+                                     # jac=weighted_residuals_jac_free,
                                      diff_step=fit_workspace.epsilon[ipar] / x_scale[ipar], bounds=list(np.array(bounds)[ipar].T))
         fit_workspace.params.values[ipar] = res.x
         Jfree = res.jac
