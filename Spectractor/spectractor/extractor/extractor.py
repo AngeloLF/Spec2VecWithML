@@ -12,7 +12,7 @@ import time
 from spectractor import parameters
 from spectractor.config import set_logger, load_config
 from spectractor.extractor.images import Image, find_target, turn_image
-from spectractor.extractor.spectrum import Spectrum, calibrate_spectrum, calibrate_spectrum_v2
+from spectractor.extractor.spectrum import Spectrum, calibrate_spectrum
 from spectractor.extractor.background import extract_spectrogram_background_sextractor
 from spectractor.extractor.chromaticpsf import ChromaticPSF
 from spectractor.extractor.psf import load_PSF
@@ -1000,7 +1000,7 @@ def run_ffm_minimisation(w, method="newton", niter=2):
             w.spectrum.chromatic_psf.params.values = w.spectrum.chromatic_psf.from_table_to_poly_params()
             w.spectrum.spectrogram_fit = w.model.reshape((w.Ny, w.Nx))
             w.spectrum.spectrogram_residuals = (w.data.reshape((w.Ny, w.Nx)) - w.spectrum.spectrogram_fit) / w.err.reshape((w.Ny, w.Nx))
-            w.spectrum.header['CHI2_FIT'] = w.costs[-1] / (w.data.size - len(w.mask) - np.sum(w.params.fixed) - len(w.outliers))
+            w.spectrum.header['CHI2_FIT'] = w.costs[-1] / (w.data.size - len(w.mask))
             w.spectrum.header['PIXSHIFT'] = w.params[r"shift_x [pix]"]
             w.spectrum.header['D2CCD'] = w.params[r"D_CCD [mm]"]
             if len(w.diffraction_orders) >= 2:
@@ -1013,8 +1013,7 @@ def run_ffm_minimisation(w, method="newton", niter=2):
                 w.spectrum.err_next_order = np.abs(w.params.values[w.diffraction_orders[1]] * w.amplitude_params_err * w.tr[1](w.lambdas))
 
             # Calibrate the spectrum
-            calibrate = calibrate_spectrum_v2 if parameters.CALIB_ALGO == "v2" else calibrate_spectrum
-            calibrate(w.spectrum, with_adr=(parameters.OBS_OBJECT_TYPE == "STAR"), grid_search=False)
+            calibrate_spectrum(w.spectrum, with_adr=(parameters.OBS_OBJECT_TYPE == "STAR"), grid_search=False)
             w.params.set(r"D_CCD [mm]", w.spectrum.header['D2CCD'])
             w.params.set(r"shift_x [pix]", w.spectrum.header['PIXSHIFT'])
             w.spectrum.convert_from_flam_to_ADUrate()
@@ -1032,7 +1031,7 @@ def run_ffm_minimisation(w, method="newton", niter=2):
             parameters.SAVE = True
             w.params.plot_correlation_matrix()
             write_fitparameter_json(w.params.json_filename, w.params,
-                                    extra={"chi2": costs[-1] / (w.data.size - len(w.outliers) - len(w.mask) - np.sum(w.params.fixed)),
+                                    extra={"chi2": costs[-1] / (w.data.size - len(w.outliers) - len(w.mask)),
                                            "date-obs": w.spectrum.date_obs})
             w.plot_fit()
             parameters.SAVE = False
@@ -1222,8 +1221,7 @@ def SpectractorRun(image, output_directory, guess=None):
 
     # Calibrate the spectrum
     my_logger.info(f'\n\tCalibrating order {spectrum.order:d} spectrum...')
-    calibrate = calibrate_spectrum_v2 if parameters.CALIB_ALGO == "v2" else calibrate_spectrum
-    calibrate(spectrum, with_adr=(parameters.OBS_OBJECT_TYPE == "STAR"), grid_search=True)
+    calibrate_spectrum(spectrum, with_adr=(parameters.OBS_OBJECT_TYPE == "STAR"), grid_search=True)
     spectrum.data_next_order = np.zeros_like(spectrum.lambdas)
     spectrum.err_next_order = np.zeros_like(spectrum.lambdas)
 
@@ -1546,7 +1544,7 @@ def extract_spectrum_from_image(image, spectrum, signal_width=10, ws=(20, 30)):
                    f'\n\tNew target position in spectrogram frame: {target_pixcoords_spectrogram}')
 
     # Save results
-    spectrum.header['CHI2_FIT'] = w.costs[-1] / (w.data.size - len(w.mask) - np.sum(w.params.fixed) - len(w.outliers))
+    spectrum.header['CHI2_FIT'] = w.costs[-1] / (w.data.size - len(w.mask))
     spectrum.spectrogram_x0 = target_pixcoords_spectrogram[0]
     spectrum.spectrogram_y0 = target_pixcoords_spectrogram[1]
     spectrum.spectrogram_xmin = xmin

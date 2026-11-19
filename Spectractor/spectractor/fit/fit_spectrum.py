@@ -18,11 +18,11 @@ try:
     from gaiaspec import getGaia
 except ModuleNotFoundError:
     getGaia = None
-
+    
 class SpectrumFitWorkspace(FitWorkspace):
 
     def __init__(self, spectrum, atmgrid_file_name="", fit_angstrom_exponent=False,
-                 verbose=False, plot=False, live_fit=False, truth=None, fixed_a1=True, fixed_dispersion=False):
+                 verbose=False, plot=False, live_fit=False, truth=None, fixed_a1=True):
         """Class to fit a spectrum extracted with Spectractor.
 
         The spectrum is supposed to be the product of the star SED, the instrument throughput and the atmospheric
@@ -49,8 +49,6 @@ class SpectrumFitWorkspace(FitWorkspace):
             Array of truth parameters to compare with the best fit result (default: None).
         fixed_a1: bool, optionnal
             Bool to fixe A1 or not (default: True)
-        fixed_dispersion: bool, optionnal
-            Bool to fixe dispersion relation
 
         Examples
         --------
@@ -85,7 +83,6 @@ class SpectrumFitWorkspace(FitWorkspace):
         # fixed[6:8] = [True, True]
         fixed[8] = False  # alpha_pix
         fixed[9] = True
-        self.fixed_dispersion = fixed_dispersion
         # fixed[-1] = True
         if not fit_angstrom_exponent:
             fixed[3] = True  # angstrom_exponent
@@ -377,8 +374,6 @@ def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20, ver
         Fitting method (default: 'newton').
     verbose: bool, optionnal
         To verbose
-    with_line_search: bool, optionnal
-        Line search for newton method
 
     Examples
     --------
@@ -434,15 +429,15 @@ def run_spectrum_minimisation(fit_workspace, method="newton", sigma_clip=20, ver
             
          
 
-    fit_workspace.params.plot_correlation_matrix()
-    fit_workspace.plot_fit()
-    extra = {"chi2": fit_workspace.costs[-1] / (fit_workspace.data.size - np.sum(fit_workspace.params.fixed) - len(fit_workspace.mask) - len(fit_workspace.outliers)),
-                "date-obs": fit_workspace.spectrum.date_obs,
-                "outliers": len(fit_workspace.outliers)}
-    fit_workspace.params.extra = extra
-    if fit_workspace.filename != "":
-        write_fitparameter_json(fit_workspace.params.json_filename, fit_workspace.params, extra=extra)
-        # save_gradient_descent(fit_workspace, costs, params_table)
+        fit_workspace.params.plot_correlation_matrix()
+        fit_workspace.plot_fit()
+        extra = {"chi2": fit_workspace.costs[-1] / fit_workspace.data.size,
+                 "date-obs": fit_workspace.spectrum.date_obs,
+                 "outliers": len(fit_workspace.outliers)}
+        fit_workspace.params.extra = extra
+        if fit_workspace.filename != "":
+            write_fitparameter_json(fit_workspace.params.json_filename, fit_workspace.params, extra=extra)
+            # save_gradient_descent(fit_workspace, costs, params_table)
 
 
 if __name__ == "__main__":
