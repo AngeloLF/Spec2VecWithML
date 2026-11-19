@@ -72,15 +72,15 @@ def extractOne(Args, num_str, path="./results/output_simu", atmoParamFolder="atm
     with open(f"{path}/{Args.test}/hparams.json", "r") as fjson:
         hp = json.load(fjson)
 
-    if Args.model == "true":
+    if Args.model.lower() == "true":
         predFolder = "spectrum"
         saveFolder = f"pred_True_x_x_0e+00"
 
-    elif Args.model == "spectractorfile":
+    elif Args.model.lower() == "spectractorfile":
         predFolder = "pred_Spectractor_x_x_0e+00"
         saveFolder = f"pred_SpectractorFile_x_x_0e+00"
 
-    elif Args.model == "Spectractor":
+    elif Args.model.lower() == "spectractor":
         predFolder = "pred_Spectractor_x_x_0e+00"
         saveFolder = f"pred_Spectractor_x_x_0e+00"
 
