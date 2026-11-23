@@ -32,7 +32,6 @@ def extraction_code(code):
 
 
 
-
 def extraction(sh, debug):
 
 	with open(sh, "r") as f:

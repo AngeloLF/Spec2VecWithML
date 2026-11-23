@@ -353,7 +353,7 @@ def verify_apply(args):
     return missings
 
 
-def verify_extract_atmo(args):
+def verify_extract_atmo(args, search):
 
     missings = list()
 
@@ -365,7 +365,7 @@ def verify_extract_atmo(args):
             missings.append(f"Test not exist : {test_folder}")
         elif "atmos_params_fit" not in os.listdir(test_folder):
             missings.append(f"Extract atmos not exist : {test_folder}/atmos_params_fit")
-        elif len(os.listdir(f"{test_folder}/atmos_params_fit")) == 0:
+        elif len(os.listdir(f"{test_folder}/atmos_params_fit")) == 0 and not search:
             missings.append(f"Extract atmos empty : {test_folder}/atmos_params_fit")
 
     return missings
@@ -403,7 +403,7 @@ def verify_batch(batch_name, args):
 
     elif batch_name in ["analyse_atmo", "search@extract_atmo"]:
 
-        missings += verify_extract_atmo(args)
+        missings += verify_extract_atmo(args, batch_name.startswith("search"))
 
     else:
 
