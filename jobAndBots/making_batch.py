@@ -568,10 +568,10 @@ if __name__ in "__main__":
 
             if t in using_fold.keys():
 
-                test.append(test_fold[t][0])
-                sets.append(test_fold[t][1])
-                psfs.append(test_fold[t][2])
-                adds.append(test_fold[t][3])
+                test.append(using_fold[t][0])
+                sets.append(using_fold[t][1])
+                psfs.append(using_fold[t][2])
+                adds.append(using_fold[t][3])
 
             else:
                 test_error.append(f"{c.r}{t}{c.d}")
