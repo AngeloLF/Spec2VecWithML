@@ -507,7 +507,7 @@ if __name__ in "__main__":
 
     # Define possible batch, with needed argv : batch -> [<code python>, [<needed argv], <device>]
     batch_codes = {
-        "simu"                 : ["specSimulator/main_simu.py",   ["nsimu", "tel", "test", "seed"],                                 "cpu"],
+        "simu"                 : ["specSimulator/main_simu.py",   ["nsimu", "tel", "type", "seed"],                                 "cpu"],
         "training"             : ["models/train_models.py",       ["model", "loss", "train", "lr", "tel", "e", "seed"],             "gpu"],
         "apply"                : ["applies/apply_model.py",       ["model", "loss", "train", "lr", "tel", "test", "seed"],          "cpu"],
         "apply_spectractor"    : ["applies/apply_spectractor.py", ["test", "tel", "seed"],                                          "cpu"],
