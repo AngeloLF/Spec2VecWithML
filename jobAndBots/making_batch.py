@@ -542,7 +542,7 @@ if __name__ in "__main__":
 
 
     # argv to split into list if containt ","
-    arg2split = ["model", "loss", "train", "test", "lr", "load", "nsimu", "score", "tel", "seed", "e"]
+    arg2split = ["model", "loss", "train", "test", "lr", "load", "nsimu", "score", "tel", "seed", "e", "type"]
 
 
     # search batch et args from sys.argv
