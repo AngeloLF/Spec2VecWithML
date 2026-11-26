@@ -656,6 +656,12 @@ if __name__ in "__main__":
         for tel, test, seed in szip(args.a2s["tel"], args.a2s["test"], args.a2s["seed"]):
 
             test_folder = f"test{args.testsize}{test}{tel}-{seed}"
+
+            print(f"{c.y}INFO [new_making_batch.py] : reset Spectractor folders for {test_folder}{c.d}")
+            for fold in ["image_fits", "spectrum_fits", "pred_Spectractor_x_x_0e+00", "spectractor_exceptions"]:
+                if fold in os.listdir(f"./results/output_simu/{test_folder}") : shutil.rmtree(f"./results/output_simu/{test_folder}/{fold}")
+                os.mkdir(f"./results/output_simu/{test_folder}/{fold}")
+
             codes.append(f"{batch_code} {test_folder}")
             batch_names.append(f"{batch}_{test_folder}")
 
