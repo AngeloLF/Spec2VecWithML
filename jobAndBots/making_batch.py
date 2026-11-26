@@ -233,7 +233,7 @@ def search_Ntest_from_code(code):
     for ele in code.split(" "):
         if ele.startswith("test="):
             test = ele.split("=")[1]
-        if ele.startswith("test"):
+        elif ele.startswith("test"):
             test = ele
 
     if test is None:
