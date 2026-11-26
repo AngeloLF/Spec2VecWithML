@@ -495,6 +495,9 @@ def make_score(score_type, models, tests, seed4spectractor):
                         elif score == "chi2" : x[i, m, t] = f"{mean:.2f} ± {std:.2f}"
                         else : raise Exception(f"Score {score} unknow")
 
+                        if "debug" in sys.argv:
+                            print(f"{label} >>> {mean:.2f} ± {std:.2f}")
+
                         tot_mean[i].append(mean)
                         tot_std[i].append(std)
 
