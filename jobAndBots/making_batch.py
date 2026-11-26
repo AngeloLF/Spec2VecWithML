@@ -670,7 +670,7 @@ if __name__ in "__main__":
 
         for model, loss, train, lr, tel, test, seed, score, load in szip(args.a2s["model"], args.a2s["loss"], args.a2s["train"], args.a2s["lr"], args.a2s["tel"], args.a2s["test"], args.a2s["seed"], args.a2s["score"], args.a2s["load"]):
 
-            train_folder = f"train{train}{tel}-{seed}"
+            train_folder = f"train{train}{tel}-{seed}" if model != "Spectractor" else train
             test_folder = f"test{args.testsize}{test}{tel}-{seed}"
             codes.append(f"{batch_code} model={model} train={train_folder} test={test_folder} loss={loss} lr={lr} score={score} load={load}")
             batch_names.append(f"{batch}_{model}_{loss}_{train_folder}_{test_folder}_{lr}_{score}_{load}")
