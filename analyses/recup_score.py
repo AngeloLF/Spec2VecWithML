@@ -475,7 +475,7 @@ def make_score(score_type, models, tests, seed4spectractor):
                     print(f"        - extract test {test_without_seeds}{c.lk}-{seed_detected}{c.d}")
 
                     with open(f"{path_analyse}/{score}/{model}/{test}/resume.txt", "r") as f:
-                        data = f.read().split("\n")[:-1]
+                        data = f.read().split("\n")
 
                     for i, line in enumerate(data):
 
