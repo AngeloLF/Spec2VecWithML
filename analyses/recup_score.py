@@ -626,7 +626,7 @@ if __name__ == "__main__":
 
     # read argv
     ARGS = SimpleNamespace(_argx=list(), xtest=list(), xmodel=list(), xseed=list(), score_type=["L1", "chi2"])
-    arg2split = ["xtest", "xseed", "xmodel"]
+    arg2split = ["xtest", "xseed", "xmodel", "score_type"]
     argv = sys.argv[1:]
 
     for arg in argv:
